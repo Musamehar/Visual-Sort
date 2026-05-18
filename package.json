@@ -3,14 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint .",
-    "server": "node server.js",
-    "dev:all": "concurrently \"npm run server\" \"npm run dev\"",
+    "start": "node server.js",
     "backend": "node run-backend.js",
-    "frontend": "concurrently \"npm run server\" \"npm run dev\""
+    "dev": "npm run start"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

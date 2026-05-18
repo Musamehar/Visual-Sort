@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Settings - SORT_VISUALIZER</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600;700&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-dim": "#131313",
+                        "primary-fixed-dim": "#ffb596",
+                        "tertiary-container": "#00a4e9",
+                        "text-secondary": "#737373",
+                        "inverse-on-surface": "#303030",
+                        "primary": "#ffb596",
+                        "outline": "#a98a7e",
+                        "error": "#ffb4ab",
+                        "on-tertiary-container": "#003650",
+                        "background": "#131313",
+                        "primary-fixed": "#ffdbcd",
+                        "on-tertiary-fixed": "#001e2f",
+                        "on-secondary": "#303031",
+                        "surface-variant": "#353535",
+                        "on-surface-variant": "#e1bfb2",
+                        "on-tertiary": "#00344d",
+                        "surface-container-low": "#1b1b1b",
+                        "on-secondary-fixed-variant": "#464747",
+                        "inverse-surface": "#e2e2e2",
+                        "text-primary": "#FDFBF7",
+                        "surface-bright": "#393939",
+                        "surface-tint": "#ffb596",
+                        "on-error-container": "#ffdad6",
+                        "primary-container": "#ff6d1f",
+                        "surface-stroke": "#262626",
+                        "on-tertiary-fixed-variant": "#004c6e",
+                        "surface-container": "#1f1f1f",
+                        "surface-container-lowest": "#0e0e0e",
+                        "tertiary-fixed": "#c9e6ff",
+                        "on-error": "#690005",
+                        "surface-container-high": "#2a2a2a",
+                        "accent-glow": "rgba(255, 109, 31, 0.15)",
+                        "secondary-fixed": "#e3e2e2",
+                        "outline-variant": "#594137",
+                        "surface": "#131313",
+                        "tertiary-fixed-dim": "#89ceff",
+                        "on-primary-fixed": "#360f00",
+                        "on-secondary-fixed": "#1b1c1c",
+                        "on-primary-container": "#5b1f00",
+                        "on-surface": "#e2e2e2",
+                        "secondary-fixed-dim": "#c7c6c6",
+                        "secondary": "#c7c6c6",
+                        "secondary-container": "#464747",
+                        "on-primary": "#581e00",
+                        "on-primary-fixed-variant": "#7d2d00",
+                        "tertiary": "#89ceff",
+                        "on-secondary-container": "#b6b5b5",
+                        "error-container": "#93000a",
+                        "inverse-primary": "#a43e00",
+                        "on-background": "#e2e2e2",
+                        "surface-container-highest": "#353535"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "unit": "4px",
+                        "container-max": "1440px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "40px"
+                    },
+                    "fontFamily": {
+                        "headline-xl": ["Geist"],
+                        "headline-lg": ["Geist"],
+                        "body-md": ["Geist"],
+                        "label-caps": ["JetBrains Mono"],
+                        "code-sm": ["JetBrains Mono"],
+                        "headline-lg-mobile": ["Geist"]
+                    },
+                    "fontSize": {
+                        "headline-xl": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "code-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #000000;
+        }
+        
+        /* Custom range slider styling */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #FF6D1F;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 0 10px rgba(255, 109, 31, 0.5);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #262626;
+            border-radius: 2px;
+        }
+        
+        /* Toggle Switch Styling */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #FF6D1F;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #FF6D1F;
+            box-shadow: 0 0 8px rgba(255, 109, 31, 0.4);
+        }
+    </style>
+</head>
+<body class="text-text-primary min-h-screen flex flex-col font-body-md text-body-md">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-xl border-b border-surface-stroke flex items-center justify-between px-margin-desktop h-16 w-full hidden md:flex">
+<div class="flex items-center gap-4">
+<button onclick="window.location.href='index.html'" class="text-primary hover:text-primary transition-colors duration-200 active:scale-95 transition-transform flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="font-headline-lg text-headline-lg text-primary">Settings</h1>
+</div>
+<div class="font-label-caps text-label-caps tracking-widest text-primary">SORT_VISUALIZER</div>
+</header>
+<!-- Mobile Header -->
+<header class="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-xl border-b border-surface-stroke flex items-center justify-between px-margin-mobile h-16 w-full md:hidden">
+<button class="text-primary hover:text-primary transition-colors duration-200 active:scale-95 transition-transform flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-primary">Settings</h1>
+<div class="w-6"></div> <!-- Spacer for alignment -->
+</header>
+<!-- Main Content -->
+<main class="flex-grow pt-24 pb-20 px-margin-mobile md:px-margin-desktop flex justify-center">
+<div class="w-full max-w-[600px] flex flex-col gap-12">
+<!-- Section 1: Visualizer Preferences -->
+<section class="flex flex-col gap-6">
+<h2 class="font-headline-lg text-headline-lg text-primary-container border-b border-surface-stroke pb-2">Visualizer Preferences</h2>
+<div class="flex flex-col gap-8 bg-surface-container-lowest border border-surface-stroke p-6 rounded-lg">
+<!-- Slider 1 -->
+<div class="flex flex-col gap-3">
+<div class="flex justify-between items-center">
+<label class="font-body-md text-body-md text-text-primary">Default Array Size</label>
+<span class="font-code-sm text-code-sm text-primary-container">100</span>
+</div>
+<input class="w-full h-1 bg-surface-stroke rounded-full appearance-none outline-none" max="200" min="10" type="range" value="100"/>
+</div>
+<!-- Slider 2 -->
+<div class="flex flex-col gap-3">
+<div class="flex justify-between items-center">
+<label class="font-body-md text-body-md text-text-primary">Default Animation Speed</label>
+<span class="font-code-sm text-code-sm text-primary-container">3x</span>
+</div>
+<input class="w-full h-1 bg-surface-stroke rounded-full appearance-none outline-none" max="5" min="1" type="range" value="3"/>
+</div>
+<!-- Toggle -->
+<div class="flex justify-between items-center pt-2 border-t border-surface-stroke">
+<label class="font-body-md text-body-md text-text-primary cursor-pointer" for="glow-toggle">Enable Bar Glow Effects</label>
+<div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+<input checked="" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 border-surface-stroke appearance-none cursor-pointer z-10 transition-transform duration-200 ease-in-out translate-x-6" id="glow-toggle" name="toggle" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-primary-container cursor-pointer transition-colors duration-200 ease-in-out" for="glow-toggle"></label>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 2: Backend Configuration -->
+<section class="flex flex-col gap-6">
+<h2 class="font-headline-lg text-headline-lg text-primary-container border-b border-surface-stroke pb-2">Backend Configuration</h2>
+<div class="flex flex-col gap-8 bg-surface-container-lowest border border-surface-stroke p-6 rounded-lg">
+<!-- Radio Group -->
+<div class="flex flex-col gap-4">
+<span class="font-body-md text-body-md text-text-primary mb-2">Execution Mode</span>
+<label class="flex items-center gap-3 cursor-pointer group">
+<div class="relative flex items-center justify-center">
+<input checked="" class="peer appearance-none w-5 h-5 border-2 border-surface-stroke rounded-full checked:border-primary-container bg-transparent transition-colors" name="exec-mode" type="radio"/>
+<div class="absolute w-2.5 h-2.5 bg-primary-container rounded-full opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+</div>
+<span class="font-body-md text-body-md text-text-primary group-hover:text-primary transition-colors">Always use Assembly Backend</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<div class="relative flex items-center justify-center">
+<input class="peer appearance-none w-5 h-5 border-2 border-surface-stroke rounded-full checked:border-primary-container bg-transparent transition-colors" name="exec-mode" type="radio"/>
+<div class="absolute w-2.5 h-2.5 bg-primary-container rounded-full opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+</div>
+<span class="font-body-md text-body-md text-text-secondary group-hover:text-text-primary transition-colors">Fallback to JavaScript if API fails</span>
+</label>
+</div>
+<!-- Toggle -->
+<div class="flex justify-between items-center pt-4 border-t border-surface-stroke">
+<label class="font-body-md text-body-md text-text-primary cursor-pointer" for="log-toggle">Show Terminal Logs on Dashboard</label>
+<div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+<input class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 border-surface-stroke appearance-none cursor-pointer z-10 transition-transform duration-200 ease-in-out" id="log-toggle" name="toggle" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-surface-stroke cursor-pointer transition-colors duration-200 ease-in-out" for="log-toggle"></label>
+</div>
+</div>
+</div>
+</section>
+<!-- Footer Actions -->
+<div class="flex flex-col sm:flex-row gap-4 mt-8 pt-8 border-t border-surface-stroke">
+<button class="flex-1 bg-[#FF6D1F] hover:bg-primary text-background font-body-md text-body-md py-3 px-6 rounded transition-colors duration-200 hover:shadow-[0_0_10px_rgba(255,109,31,0.5)]">
+                    Save Preferences
+                </button>
+<button class="flex-1 bg-transparent border border-[#262626] hover:border-[#FF6D1F] text-text-primary font-body-md text-body-md py-3 px-6 rounded transition-colors duration-200">
+                    Reset to Defaults
+                </button>
+</div>
+</div>
+</main>
+</body></html>

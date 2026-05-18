@@ -11,6 +11,7 @@ const OUTPUT_FILE = path.join(__dirname, 'sort_data.txt');
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Get current data from sort_data.txt
 app.get('/api/data', (req, res) => {
