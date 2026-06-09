@@ -240,88 +240,88 @@ const ALGORITHMS: Array<{
   stable: boolean
   code: string
 }> = [
-  {
-    key: "Bubble Sort",
-    short: "BUBBLE_SORT",
-    description:
-      "Repeatedly steps through the list, compares adjacent pairs, and swaps them if they are in the wrong order. The largest element bubbles to the end on each pass.",
-    best: "O(n)",
-    avg: "O(n²)",
-    worst: "O(n²)",
-    space: "O(1)",
-    stable: true,
-    code: `for i in 0..n-1:
+    {
+      key: "Bubble Sort",
+      short: "BUBBLE_SORT",
+      description:
+        "Repeatedly steps through the list, compares adjacent pairs, and swaps them if they are in the wrong order. The largest element bubbles to the end on each pass.",
+      best: "O(n)",
+      avg: "O(n²)",
+      worst: "O(n²)",
+      space: "O(1)",
+      stable: true,
+      code: `for i in 0..n-1:
   for j in 0..n-1-i:
     if a[j] > a[j+1]:
       swap(a[j], a[j+1])`,
-  },
-  {
-    key: "Selection Sort",
-    short: "SELECTION_SORT",
-    description:
-      "Divides the array into a sorted and unsorted region. Repeatedly selects the minimum element from the unsorted region and moves it to the boundary.",
-    best: "O(n²)",
-    avg: "O(n²)",
-    worst: "O(n²)",
-    space: "O(1)",
-    stable: false,
-    code: `for i in 0..n-1:
+    },
+    {
+      key: "Selection Sort",
+      short: "SELECTION_SORT",
+      description:
+        "Divides the array into a sorted and unsorted region. Repeatedly selects the minimum element from the unsorted region and moves it to the boundary.",
+      best: "O(n²)",
+      avg: "O(n²)",
+      worst: "O(n²)",
+      space: "O(1)",
+      stable: false,
+      code: `for i in 0..n-1:
   min = i
   for j in i+1..n:
     if a[j] < a[min]:
       min = j
   swap(a[i], a[min])`,
-  },
-  {
-    key: "Insertion Sort",
-    short: "INSERTION_SORT",
-    description:
-      "Builds the sorted array one element at a time by inserting each new element into its correct position relative to the already-sorted prefix.",
-    best: "O(n)",
-    avg: "O(n²)",
-    worst: "O(n²)",
-    space: "O(1)",
-    stable: true,
-    code: `for i in 1..n:
+    },
+    {
+      key: "Insertion Sort",
+      short: "INSERTION_SORT",
+      description:
+        "Builds the sorted array one element at a time by inserting each new element into its correct position relative to the already-sorted prefix.",
+      best: "O(n)",
+      avg: "O(n²)",
+      worst: "O(n²)",
+      space: "O(1)",
+      stable: true,
+      code: `for i in 1..n:
   j = i
   while j > 0 and a[j-1] > a[j]:
     swap(a[j-1], a[j])
     j -= 1`,
-  },
-  {
-    key: "Quick Sort",
-    short: "QUICK_SORT",
-    description:
-      "Divide-and-conquer routine that picks a pivot, partitions the array into elements less than and greater than the pivot, then recursively sorts the two partitions.",
-    best: "O(n log n)",
-    avg: "O(n log n)",
-    worst: "O(n²)",
-    space: "O(log n)",
-    stable: false,
-    code: `quick(lo, hi):
+    },
+    {
+      key: "Quick Sort",
+      short: "QUICK_SORT",
+      description:
+        "Divide-and-conquer routine that picks a pivot, partitions the array into elements less than and greater than the pivot, then recursively sorts the two partitions.",
+      best: "O(n log n)",
+      avg: "O(n log n)",
+      worst: "O(n²)",
+      space: "O(log n)",
+      stable: false,
+      code: `quick(lo, hi):
   if lo < hi:
     p = partition(lo, hi)
     quick(lo, p-1)
     quick(p+1, hi)`,
-  },
-  {
-    key: "Merge Sort",
-    short: "MERGE_SORT",
-    description:
-      "Recursively splits the array in half, sorts each half, and merges the two sorted halves back into a single sorted sequence.",
-    best: "O(n log n)",
-    avg: "O(n log n)",
-    worst: "O(n log n)",
-    space: "O(n)",
-    stable: true,
-    code: `merge_sort(l, r):
+    },
+    {
+      key: "Merge Sort",
+      short: "MERGE_SORT",
+      description:
+        "Recursively splits the array in half, sorts each half, and merges the two sorted halves back into a single sorted sequence.",
+      best: "O(n log n)",
+      avg: "O(n log n)",
+      worst: "O(n log n)",
+      space: "O(n)",
+      stable: true,
+      code: `merge_sort(l, r):
   if l >= r: return
   m = (l + r) / 2
   merge_sort(l, m)
   merge_sort(m+1, r)
   merge(l, m, r)`,
-  },
-]
+    },
+  ]
 
 const DEFAULT_DATA = [12, 34, 5, 89, 21, 45, 67, 78, 42, 92, 12, 56, 30, 71, 19, 84, 61, 23, 95, 48, 73, 25, 88, 52, 31]
 
@@ -338,11 +338,10 @@ function TopNav() {
           <a
             key={t}
             href="#"
-            className={`h-full flex items-center font-mono text-[13px] transition-colors ${
-              i === 0
+            className={`h-full flex items-center font-mono text-[13px] transition-colors ${i === 0
                 ? "text-primary border-b-2 border-primary"
                 : "text-muted-fg hover:text-primary"
-            }`}
+              }`}
           >
             {t}
           </a>
@@ -422,11 +421,10 @@ function Sidebar({
             <button
               key={item.label}
               onClick={() => setView(item.label)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-sm transition-all text-left ${
-                active
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-sm transition-all text-left ${active
                   ? "bg-primary text-on-primary font-semibold border-l-4 border-primary-soft"
                   : "text-muted-fg hover:bg-surface-high hover:text-foreground border-l-4 border-transparent"
-              }`}
+                }`}
             >
               <Icon className="w-4 h-4" />
               <span className="font-mono text-[13px]">{item.label}</span>
@@ -489,9 +487,8 @@ function Sidebar({
           </button>
           <button
             onClick={onPlay}
-            className={`flex-1 py-1.5 rounded-sm hover:bg-surface-high flex justify-center items-center transition-all active:scale-90 ${
-              isPlaying ? "text-primary" : "text-foreground"
-            }`}
+            className={`flex-1 py-1.5 rounded-sm hover:bg-surface-high flex justify-center items-center transition-all active:scale-90 ${isPlaying ? "text-primary" : "text-foreground"
+              }`}
             aria-label="Play"
           >
             <Play className="w-4 h-4" />
@@ -539,11 +536,10 @@ function Sidebar({
                 Backend Mode
               </label>
               <span
-                className={`text-[9px] px-1.5 py-0.5 rounded-sm uppercase font-mono tracking-widest ${
-                  apiHealthy
+                className={`text-[9px] px-1.5 py-0.5 rounded-sm uppercase font-mono tracking-widest ${apiHealthy
                     ? "bg-primary/20 text-primary-soft"
                     : "bg-outline-variant/20 text-outline"
-                }`}
+                  }`}
               >
                 {apiHealthy ? "✓ API Ready" : "✗ API Offline"}
               </span>
@@ -551,22 +547,20 @@ function Sidebar({
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setUseAssemblyBackend(false)}
-                className={`flex-1 py-1.5 px-2 rounded-sm text-[11px] font-mono font-semibold transition-all ${
-                  !useAssemblyBackend
+                className={`flex-1 py-1.5 px-2 rounded-sm text-[11px] font-mono font-semibold transition-all ${!useAssemblyBackend
                     ? "bg-primary text-on-primary"
                     : "bg-surface-lowest text-muted-fg hover:text-foreground border border-outline-variant"
-                }`}
+                  }`}
               >
                 JS
               </button>
               <button
                 onClick={() => setUseAssemblyBackend(true)}
                 disabled={!apiHealthy}
-                className={`flex-1 py-1.5 px-2 rounded-sm text-[11px] font-mono font-semibold transition-all flex items-center justify-center gap-1 ${
-                  useAssemblyBackend && apiHealthy
+                className={`flex-1 py-1.5 px-2 rounded-sm text-[11px] font-mono font-semibold transition-all flex items-center justify-center gap-1 ${useAssemblyBackend && apiHealthy
                     ? "bg-accent-orange text-on-primary"
                     : "bg-surface-lowest text-muted-fg border border-outline-variant"
-                } ${!apiHealthy ? "opacity-50 cursor-not-allowed" : ""}`}
+                  } ${!apiHealthy ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 <Zap className="w-3 h-3" />
                 ASM
@@ -587,9 +581,8 @@ function Sidebar({
         <button
           onClick={onExecute}
           disabled={isBackendProcessing}
-          className={`w-full bg-primary text-on-primary font-mono text-[13px] py-2.5 rounded-sm hover:bg-primary-soft transition-all active:scale-[0.98] uppercase tracking-widest font-bold shadow-[0_0_10px_rgba(77,148,255,0.25)] hover:shadow-[0_0_18px_rgba(77,148,255,0.45)] ${
-            isBackendProcessing ? "opacity-70 cursor-not-allowed" : ""
-          }`}
+          className={`w-full bg-primary text-on-primary font-mono text-[13px] py-2.5 rounded-sm hover:bg-primary-soft transition-all active:scale-[0.98] uppercase tracking-widest font-bold shadow-[0_0_10px_rgba(77,148,255,0.25)] hover:shadow-[0_0_18px_rgba(77,148,255,0.45)] ${isBackendProcessing ? "opacity-70 cursor-not-allowed" : ""
+            }`}
         >
           {isBackendProcessing ? "PROCESSING..." : "EXECUTE_SORT"}
         </button>
@@ -628,13 +621,12 @@ function Visualizer({
           return (
             <div
               key={idx}
-              className={`relative w-full rounded-t-[2px] ease-out ${
-                isOrange
+              className={`relative w-full rounded-t-[2px] ease-out ${isOrange
                   ? "bg-accent-orange active-bar border-t-2 border-accent-orange-soft"
                   : isPivot
                     ? "bg-primary border-t-2 border-primary-soft shadow-[0_0_10px_rgba(77,148,255,0.45)]"
                     : "bg-slate"
-              }`}
+                }`}
               style={{
                 height: `${heightPct}%`,
                 transition: `height ${transitionMs}ms ease-out, background-color ${transitionMs}ms ease-out`,
@@ -689,22 +681,19 @@ function Console({
   const tabs: Array<typeof activeTab> = ["Logs"]
 
   return (
-    <footer className={`fixed bottom-0 right-0 left-0 md:left-[320px] z-30 flex flex-col transition-all duration-300 ${
-      isMinimized ? "pointer-events-none" : "bg-surface-lowest border-t border-border-line"
-    }`} style={{ height: isMinimized ? "40px" : `${originalHeight}px` }}>
-      <div className={`flex items-center justify-between px-4 py-2 ${
-        isMinimized ? "bg-surface-container border-t border-border-line pointer-events-auto" : "bg-surface-container border-b border-border-line"
-      }`}>
+    <footer className={`fixed bottom-0 right-0 left-0 md:left-[320px] z-30 flex flex-col transition-all duration-300 ${isMinimized ? "pointer-events-none" : "bg-surface-lowest border-t border-border-line"
+      }`} style={{ height: isMinimized ? "40px" : `${originalHeight}px` }}>
+      <div className={`flex items-center justify-between px-4 py-2 ${isMinimized ? "bg-surface-container border-t border-border-line pointer-events-auto" : "bg-surface-container border-b border-border-line"
+        }`}>
         <div className="flex items-center gap-5">
           {tabs.map((t) => (
             <button
               key={t}
               onClick={() => setActiveTab(t)}
-              className={`relative font-mono text-[13px] pb-1 transition-colors ${
-                activeTab === t
+              className={`relative font-mono text-[13px] pb-1 transition-colors ${activeTab === t
                   ? "text-accent-orange font-bold"
                   : "text-outline hover:text-accent-orange-soft"
-              }`}
+                }`}
             >
               {t}
               {activeTab === t && (
@@ -810,9 +799,8 @@ function MetricRow({ label, value, highlight }: { label: string; value: string; 
     <div className="flex items-baseline justify-between border-b border-border-line pb-2">
       <span className="font-mono text-[11px] text-muted-fg uppercase tracking-widest">{label}</span>
       <span
-        className={`font-mono text-[18px] font-bold ${
-          highlight ? "text-accent-orange drop-shadow-[0_0_8px_rgba(255,107,26,0.6)]" : "text-foreground"
-        }`}
+        className={`font-mono text-[18px] font-bold ${highlight ? "text-accent-orange drop-shadow-[0_0_8px_rgba(255,107,26,0.6)]" : "text-foreground"
+          }`}
       >
         {value}
       </span>
@@ -853,11 +841,10 @@ function AlgorithmsPage({
             return (
               <article
                 key={algo.key}
-                className={`rounded-sm border bg-surface-low p-5 flex flex-col gap-4 transition-all ${
-                  active
+                className={`rounded-sm border bg-surface-low p-5 flex flex-col gap-4 transition-all ${active
                     ? "border-primary shadow-[0_0_20px_rgba(77,148,255,0.18)]"
                     : "border-border-line hover:border-outline"
-                }`}
+                  }`}
               >
                 <header className="flex items-start justify-between gap-2">
                   <div>
@@ -903,11 +890,10 @@ function AlgorithmsPage({
                     setAlgorithm(algo.key)
                     goToVisualizer()
                   }}
-                  className={`mt-auto w-full font-mono text-[12px] py-2 rounded-sm uppercase tracking-widest font-bold transition-all active:scale-[0.98] ${
-                    active
+                  className={`mt-auto w-full font-mono text-[12px] py-2 rounded-sm uppercase tracking-widest font-bold transition-all active:scale-[0.98] ${active
                       ? "bg-primary text-on-primary shadow-[0_0_14px_rgba(77,148,255,0.35)]"
                       : "bg-surface-container text-foreground border border-outline-variant hover:border-primary hover:text-primary-soft"
-                  }`}
+                    }`}
                 >
                   {active ? "RELOAD_INTO_PIPELINE" : "LOAD_INTO_PIPELINE"}
                 </button>
@@ -933,9 +919,8 @@ function ComplexityRow({
     <div className="flex items-center justify-between border-b border-border-line/60 pb-1">
       <dt className="text-muted-fg uppercase tracking-widest text-[10px]">{label}</dt>
       <dd
-        className={`font-bold ${
-          highlight ? "text-accent-orange" : "text-foreground"
-        }`}
+        className={`font-bold ${highlight ? "text-accent-orange" : "text-foreground"
+          }`}
       >
         {value}
       </dd>
@@ -1034,13 +1019,12 @@ function MemoryMapPage({
                       return (
                         <div
                           key={col}
-                          className={`aspect-square border ${
-                            cell.allocated
+                          className={`aspect-square border ${cell.allocated
                               ? cell.hot
                                 ? "bg-primary border-primary shadow-[0_0_8px_rgba(77,148,255,0.7)]"
                                 : "bg-accent-orange border-accent-orange-soft shadow-[0_0_5px_rgba(255,138,38,0.55)]"
                               : "bg-surface-lowest border-border-line"
-                          }`}
+                            }`}
                           title={`0x0${row.toString(16).toUpperCase()}${col.toString(16).toUpperCase()}`}
                         />
                       )
@@ -1158,9 +1142,8 @@ function StatRow({
         {label}
       </span>
       <span
-        className={`text-[12px] font-bold ${mono ? "font-mono" : ""} ${
-          valueClass ?? "text-foreground"
-        }`}
+        className={`text-[12px] font-bold ${mono ? "font-mono" : ""} ${valueClass ?? "text-foreground"
+          }`}
       >
         {value}
       </span>
@@ -1220,64 +1203,64 @@ function RegistersPage({
     statusTone: "primary" | "muted" | "orange"
     highlight?: boolean
   }> = [
-    {
-      name: "RAX",
-      hex: toHex(rax),
-      dec: rax.toString(),
-      status: "DIRTY",
-      statusTone: "primary",
-    },
-    {
-      name: "RBX",
-      hex: "0xFFFFFFFFFFFFFFFF",
-      dec: "-1",
-      status: "STABLE",
-      statusTone: "muted",
-    },
-    {
-      name: "RCX",
-      hex: toHex(rcx),
-      dec: rcx.toString(),
-      status: "STABLE",
-      statusTone: "muted",
-    },
-    {
-      name: "RDX",
-      hex: toHex(compareA),
-      dec: compareA.toString(),
-      status: isCompare ? "COMPARE" : "STABLE",
-      statusTone: isCompare ? "orange" : "muted",
-      highlight: isCompare,
-    },
-    {
-      name: "RSP",
-      hex: toHex(rsp),
-      dec: rsp.toString(),
-      status: "STACK_PTR",
-      statusTone: "muted",
-    },
-    {
-      name: "RBP",
-      hex: toHex(rbp),
-      dec: rbp.toString(),
-      status: "BASE_PTR",
-      statusTone: "muted",
-    },
-    {
-      name: "RSI",
-      hex: toHex(compareB),
-      dec: compareB.toString(),
-      status: compareB === 0 ? "NULL" : "STABLE",
-      statusTone: "muted",
-    },
-    {
-      name: "RDI",
-      hex: toHex(rdi),
-      dec: rdi.toString(),
-      status: "STABLE",
-      statusTone: "muted",
-    },
-  ]
+      {
+        name: "RAX",
+        hex: toHex(rax),
+        dec: rax.toString(),
+        status: "DIRTY",
+        statusTone: "primary",
+      },
+      {
+        name: "RBX",
+        hex: "0xFFFFFFFFFFFFFFFF",
+        dec: "-1",
+        status: "STABLE",
+        statusTone: "muted",
+      },
+      {
+        name: "RCX",
+        hex: toHex(rcx),
+        dec: rcx.toString(),
+        status: "STABLE",
+        statusTone: "muted",
+      },
+      {
+        name: "RDX",
+        hex: toHex(compareA),
+        dec: compareA.toString(),
+        status: isCompare ? "COMPARE" : "STABLE",
+        statusTone: isCompare ? "orange" : "muted",
+        highlight: isCompare,
+      },
+      {
+        name: "RSP",
+        hex: toHex(rsp),
+        dec: rsp.toString(),
+        status: "STACK_PTR",
+        statusTone: "muted",
+      },
+      {
+        name: "RBP",
+        hex: toHex(rbp),
+        dec: rbp.toString(),
+        status: "BASE_PTR",
+        statusTone: "muted",
+      },
+      {
+        name: "RSI",
+        hex: toHex(compareB),
+        dec: compareB.toString(),
+        status: compareB === 0 ? "NULL" : "STABLE",
+        statusTone: "muted",
+      },
+      {
+        name: "RDI",
+        hex: toHex(rdi),
+        dec: rdi.toString(),
+        status: "STABLE",
+        statusTone: "muted",
+      },
+    ]
 
   // EFLAGS
   const zf = isCompare && compareA === compareB ? 1 : 0
@@ -1332,28 +1315,24 @@ function RegistersPage({
                   {registers.map((r) => (
                     <tr
                       key={r.name}
-                      className={`border-b border-border-line/70 transition-colors ${
-                        r.highlight ? "bg-accent-orange/5" : "hover:bg-primary/5"
-                      }`}
+                      className={`border-b border-border-line/70 transition-colors ${r.highlight ? "bg-accent-orange/5" : "hover:bg-primary/5"
+                        }`}
                     >
                       <td
-                        className={`px-4 py-3 font-bold ${
-                          r.highlight ? "text-accent-orange" : "text-primary-soft"
-                        }`}
+                        className={`px-4 py-3 font-bold ${r.highlight ? "text-accent-orange" : "text-primary-soft"
+                          }`}
                       >
                         {r.name}
                       </td>
                       <td
-                        className={`px-4 py-3 ${
-                          r.highlight ? "text-accent-orange" : "text-foreground"
-                        }`}
+                        className={`px-4 py-3 ${r.highlight ? "text-accent-orange" : "text-foreground"
+                          }`}
                       >
                         {r.hex}
                       </td>
                       <td
-                        className={`px-4 py-3 ${
-                          r.highlight ? "text-accent-orange" : "text-muted-fg"
-                        }`}
+                        className={`px-4 py-3 ${r.highlight ? "text-accent-orange" : "text-muted-fg"
+                          }`}
                       >
                         {r.dec}
                       </td>
@@ -1388,11 +1367,10 @@ function RegistersPage({
                   {lowBits.map((b, i) => (
                     <div
                       key={i}
-                      className={`flex-1 h-6 flex items-center justify-center border font-mono text-[10px] ${
-                        b
+                      className={`flex-1 h-6 flex items-center justify-center border font-mono text-[10px] ${b
                           ? "bg-primary/15 border-primary text-primary-soft"
                           : "bg-surface-container border-outline-variant text-outline"
-                      }`}
+                        }`}
                     >
                       {b}
                     </div>
@@ -1474,9 +1452,8 @@ function FlagBit({
         {name}
       </span>
       <div
-        className={`w-9 h-9 rounded-full border-2 flex items-center justify-center font-mono font-bold text-[13px] ${
-          active ? onColor : "border-outline-variant bg-surface-container text-outline opacity-60"
-        }`}
+        className={`w-9 h-9 rounded-full border-2 flex items-center justify-center font-mono font-bold text-[13px] ${active ? onColor : "border-outline-variant bg-surface-container text-outline opacity-60"
+          }`}
       >
         {value}
       </div>
@@ -1578,9 +1555,8 @@ export default function Page() {
         {
           id: ++logIdRef.current,
           kind: "CMP",
-          text: `[CMP] Compare idx_${evt.indices[0]} (${a}) with idx_${evt.indices[1]} (${b}) → ${
-            willSwap ? "SWAP_REQUIRED" : "NO_SWAP"
-          }`,
+          text: `[CMP] Compare idx_${evt.indices[0]} (${a}) with idx_${evt.indices[1]} (${b}) → ${willSwap ? "SWAP_REQUIRED" : "NO_SWAP"
+            }`,
         },
       ])
     } else if (evt.type === "swap") {
@@ -1739,9 +1715,8 @@ export default function Page() {
         isBackendProcessing={isBackendProcessing}
         backendError={backendError}
       />
-      <main className={`md:pl-[320px] pt-16 h-screen w-full flex flex-col relative transition-all duration-300 ${
-        isLogsMinimized ? "pb-10" : "pb-[220px]"
-      }`}>
+      <main className={`md:pl-[320px] pt-16 h-screen w-full flex flex-col relative transition-all duration-300 ${isLogsMinimized ? "pb-10" : "pb-[220px]"
+        }`}>
         {view === "Visualizer" && (
           <Visualizer
             frame={currentFrame}

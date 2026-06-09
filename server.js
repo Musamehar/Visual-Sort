@@ -13,6 +13,11 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Redirect old per-algorithm pages to the unified visualizer
+['sorting.html'].forEach(page => {
+  app.get('/' + page, (req, res) => res.redirect('/visualizer.html'));
+});
+
 // Get current data from sort_data.txt
 app.get('/api/data', (req, res) => {
   try {
@@ -184,6 +189,35 @@ function parseAssemblyOutput(fileContent, algorithm) {
     }
   };
 }
+
+// Serve the raw ASM source file as structured JSON
+app.get('/api/asm-source', (req, res) => {
+  const asmPath = path.join(__dirname, 'Backend', 'SortVisualizer.asm');
+  try {
+    if (!fs.existsSync(asmPath)) {
+      return res.status(404).json({ error: 'ASM source file not found' });
+    }
+    const raw = fs.readFileSync(asmPath, 'utf-8');
+    const lines = raw.split(/\r?\n/);
+    const structured = lines.map((content, i) => {
+      const lineNum = i + 1;
+      const trimmed = content.trim();
+      // Detect labels (lines ending with : that aren't comments)
+      const labelMatch = trimmed.match(/^([A-Za-z_][A-Za-z0-9_]*):/);
+      const label = labelMatch ? labelMatch[1] : null;
+      // Detect instruction type
+      let type = 'code';
+      if (trimmed.startsWith(';')) type = 'comment';
+      else if (trimmed.startsWith('.')) type = 'directive';
+      else if (label) type = 'label';
+      else if (trimmed === '') type = 'blank';
+      return { lineNum, content, label, type };
+    });
+    res.json({ success: true, lines: structured, totalLines: lines.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // List available algorithms
 app.get('/api/algorithms', (req, res) => {
