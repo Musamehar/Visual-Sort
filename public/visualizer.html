@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>VisualSort — Assembly Algorithm Visualizer</title>
+<meta name="description" content="Interactive assembly-powered sorting visualizer with live ASM code panel, register simulation, stack trace, complexity graph, sound mode, and more."/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+tailwind.config = {
+  darkMode:'class',
+  theme:{ extend:{
+    colors:{
+      'p':'#FF6D1F','pd':'#cc5200','pl':'#ffb596',
+      'bg':'#0a0a0a','bg2':'#111111','bg3':'#161616',
+      'sur':'#1a1a1a','sur2':'#222222','sur3':'#2a2a2a',
+      'str':'#2e2e2e','str2':'#3a3a3a',
+      'tx':'#f0f0f0','tx2':'#888888','tx3':'#555555',
+      'grn':'#06D6A0','yel':'#FFD166','red':'#EF476F','blu':'#89ceff'
+    },
+    fontFamily:{ mono:['JetBrains Mono','monospace'], sans:['Geist','sans-serif'] }
+  }}
+}
+</script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--p:#FF6D1F;--pd:#cc5200;--pl:#ffb596;--grn:#06D6A0;--yel:#FFD166;--red:#EF476F;--blu:#89ceff}
+body{background:#0a0a0a;color:#f0f0f0;font-family:'Geist',sans-serif;overflow-x:hidden}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#2e2e2e;border-radius:2px}
+.msym{font-family:'Material Symbols Outlined';font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 20;line-height:1;user-select:none}
+.msym.fill{font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20}
+
+/* Tabs */
+.algo-tab{position:relative;height:64px;padding:0 14px;font-family:'JetBrains Mono';font-size:11px;letter-spacing:.05em;font-weight:600;text-transform:uppercase;color:#555;border:none;background:none;cursor:pointer;transition:color .15s;white-space:nowrap}
+.algo-tab:hover{color:#888}
+.algo-tab.active{color:var(--p)}
+.algo-tab.active::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:2px;background:var(--p);border-radius:2px 2px 0 0;box-shadow:0 0 10px rgba(255,109,31,.7)}
+
+/* Panel tabs */
+.ptab{padding:6px 14px;font-family:'JetBrains Mono';font-size:10px;letter-spacing:.05em;font-weight:600;text-transform:uppercase;color:#555;border:none;background:none;cursor:pointer;transition:color .15s;border-bottom:2px solid transparent}
+.ptab:hover{color:#888}
+.ptab.active{color:var(--p);border-bottom-color:var(--p)}
+
+/* Sort bars */
+.bar{border-radius:3px 3px 0 0;transition:background .08s,box-shadow .08s;position:absolute;bottom:0}
+.bar.state-default{background:#FF6D1F;box-shadow:0 0 8px rgba(255,109,31,.3)}
+.bar.state-compare{background:#FFD166;box-shadow:0 0 16px rgba(255,209,102,.8)}
+.bar.state-swap{background:#EF476F;box-shadow:0 0 16px rgba(239,71,111,.8);animation:swapPulse .12s ease}
+.bar.state-sorted{background:#06D6A0;box-shadow:0 0 8px rgba(6,214,160,.4)}
+.bar.state-pivot{background:#89ceff;box-shadow:0 0 14px rgba(137,206,255,.7)}
+.bar.state-dim{background:#222;box-shadow:none}
+@keyframes swapPulse{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.08)}}
+
+/* ASM line highlight */
+.asm-line{padding:1px 6px;font-family:'JetBrains Mono';font-size:11px;line-height:18px;white-space:pre;border-left:2px solid transparent;cursor:pointer;transition:background .1s}
+.asm-line:hover{background:#1f1f1f}
+.asm-line.hl-cmp{background:rgba(255,209,102,.12);border-left-color:#FFD166;color:#FFD166}
+.asm-line.hl-swp{background:rgba(239,71,111,.12);border-left-color:#EF476F;color:#EF476F}
+.asm-line.hl-jmp{background:rgba(137,206,255,.08);border-left-color:#89ceff;color:#89ceff}
+.asm-line.hl-cur{background:rgba(255,109,31,.15);border-left-color:#FF6D1F;color:#ffb596}
+.asm-line.comment-line{color:#444}
+.asm-line.label-line{color:#888;font-weight:600}
+.asm-line.directive-line{color:#555}
+.asm-line .ln{color:#333;min-width:32px;display:inline-block;text-align:right;margin-right:8px;user-select:none;font-size:9px}
+
+/* Register chip */
+.reg-chip{background:#161616;border:1px solid #2e2e2e;border-radius:4px;padding:4px 8px;font-family:'JetBrains Mono';font-size:10px;display:flex;flex-direction:column;gap:2px;transition:border-color .15s}
+.reg-chip.changed{border-color:#FF6D1F;animation:regFlash .3s}
+@keyframes regFlash{0%,100%{background:#161616}50%{background:rgba(255,109,31,.15)}}
+
+/* Stack frame */
+.stack-frame{padding:5px 10px;background:#161616;border:1px solid #2e2e2e;border-radius:4px;font-family:'JetBrains Mono';font-size:10px;color:#888;transition:all .2s}
+.stack-frame.active{border-color:#89ceff;color:#89ceff}
+
+/* Counter animation */
+@keyframes counterBump{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+.bumping{animation:counterBump .15s ease}
+
+/* Progress bar */
+#prog-bar{transition:width .08s linear}
+
+/* Input mode btn */
+.imode-btn{padding:5px 12px;font-family:'JetBrains Mono';font-size:10px;font-weight:600;letter-spacing:.05em;border:1px solid #2e2e2e;border-radius:4px;background:#161616;color:#555;cursor:pointer;transition:all .15s;text-transform:uppercase}
+.imode-btn.active,.imode-btn:hover{border-color:var(--p);color:var(--p)}
+
+/* Compare mode split */
+#compare-wrap{display:none;gap:12px}
+#compare-wrap.active{display:flex}
+
+/* Complexity graph canvas */
+#cplx-canvas{width:100%;height:100px;display:block}
+
+/* Sound toggle */
+#sound-btn.on{color:var(--p)}
+#sound-btn.off{color:#555}
+
+/* Tooltip */
+[title]:hover::after{content:attr(title);position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:#1a1a1a;border:1px solid #2e2e2e;color:#888;font-size:9px;padding:2px 6px;border-radius:3px;white-space:nowrap;pointer-events:none;z-index:99;font-family:'JetBrains Mono'}
+
+/* Winner badge */
+.winner-badge{position:absolute;top:8px;right:8px;background:var(--grn);color:#000;padding:3px 10px;border-radius:12px;font-size:10px;font-family:'JetBrains Mono';font-weight:700;z-index:20}
+</style>
+</head>
+<body class="bg-bg overflow-x-hidden">
+
+<!-- ══════════════════ TOP NAV ══════════════════ -->
+<nav class="fixed top-0 w-full z-50 border-b border-str" style="background:rgba(10,10,10,.92);backdrop-filter:blur(16px)">
+  <div class="flex items-center h-16 px-4 md:px-8 gap-3 max-w-[1920px] mx-auto">
+    <!-- Brand -->
+    <a href="index.html" class="font-sans font-bold text-xl text-p mr-2 shrink-0" style="text-shadow:0 0 16px rgba(255,109,31,.5)">VisualSort</a>
+
+
+    <!-- Algorithm Tabs -->
+    <div class="flex items-center h-16 gap-0 overflow-x-auto flex-1 transition-all duration-300" id="algo-tabs">
+      <button class="algo-tab active" id="tab-bubble"    data-id="bubble"    data-name="Bubble Sort"    data-time="O(n²)"      data-space="O(1)"      data-lines="459,507" data-comment="Repeatedly compare + swap adjacent pairs. Largest bubbles to end each pass.">Bubble Sort</button>
+      <button class="algo-tab"        id="tab-selection" data-id="selection"  data-name="Selection Sort" data-time="O(n²)"      data-space="O(1)"      data-lines="517,569" data-comment="Find minimum in unsorted region, place at front. O(n) swaps.">Selection Sort</button>
+      <button class="algo-tab"        id="tab-insertion" data-id="insertion"  data-name="Insertion Sort" data-time="O(n²)"      data-space="O(1)"      data-lines="580,627" data-comment="Maintain sorted prefix. Insert each new element at correct position.">Insertion Sort</button>
+      <button class="algo-tab"        id="tab-quick"     data-id="quick"      data-name="Quick Sort"     data-time="O(n log n)" data-space="O(log n)"  data-lines="637,733" data-comment="Partition around pivot, recurse on both sides. Middle-element pivot strategy.">Quick Sort</button>
+      <button class="algo-tab"        id="tab-merge"     data-id="merge"      data-name="Merge Sort"     data-time="O(n log n)" data-space="O(n)"      data-lines="743,875" data-comment="Bottom-up merge of sorted runs, doubling run width each pass.">Merge Sort</button>
+    </div>
+
+    <!-- Compare Algorithm Selectors (Hidden by default) -->
+    <div class="hidden items-center h-16 gap-4 px-4 flex-1 transition-all duration-300" id="compare-selectors">
+      <div class="flex items-center gap-2">
+        <span class="font-mono text-[10px] text-tx3 uppercase">Algo A</span>
+        <select id="sel-algo-a" class="bg-sur border border-str rounded px-2 py-1 font-mono text-[11px] text-p focus:border-p focus:ring-0 outline-none">
+          <option value="bubble">Bubble Sort</option>
+          <option value="selection">Selection Sort</option>
+          <option value="insertion">Insertion Sort</option>
+          <option value="quick">Quick Sort</option>
+          <option value="merge">Merge Sort</option>
+        </select>
+      </div>
+      <span class="font-mono text-[12px] text-tx3 font-bold">VS</span>
+      <div class="flex items-center gap-2">
+        <span class="font-mono text-[10px] text-tx3 uppercase">Algo B</span>
+        <select id="sel-algo-b" class="bg-sur border border-str rounded px-2 py-1 font-mono text-[11px] text-p focus:border-p focus:ring-0 outline-none">
+          <option value="bubble">Bubble Sort</option>
+          <option value="selection">Selection Sort</option>
+          <option value="insertion">Insertion Sort</option>
+          <option value="quick" selected>Quick Sort</option>
+          <option value="merge">Merge Sort</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Right controls -->
+    <div class="flex items-center gap-2 shrink-0 ml-2">
+      <button id="compare-toggle" class="px-3 py-1 font-mono text-[10px] border border-str2 text-tx2 rounded hover:border-p hover:text-p transition-colors uppercase tracking-wider">Compare</button>
+      <button onclick="location.href='settings.html'" class="msym text-tx3 hover:text-p transition-colors p-1">settings</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ══════════════════ LEFT SIDEBAR ══════════════════ -->
+<aside class="hidden md:flex fixed left-0 top-16 bottom-0 w-60 border-r border-str bg-bg2 flex-col z-40 overflow-y-auto">
+
+  <!-- Engine label -->
+  <div class="px-4 py-4 border-b border-str">
+    <div class="flex items-center gap-2">
+      <span class="msym text-p text-[18px]">memory</span>
+      <div>
+        <p class="font-mono text-[10px] text-p font-semibold uppercase tracking-wider">Assembly Visualizer</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Algorithm Info -->
+  <div class="px-4 py-3 border-b border-str">
+    <p class="font-mono text-[9px] text-tx3 uppercase tracking-wider mb-2">Current Algorithm</p>
+    <p id="s-algo-name" class="font-mono text-[11px] text-p font-semibold mb-1">Bubble Sort</p>
+    <p id="s-algo-desc" class="font-mono text-[9px] text-tx3 leading-relaxed mb-2">Repeatedly compare + swap adjacent pairs.</p>
+    <div class="flex gap-1.5">
+      <div class="flex-1 bg-sur border border-str rounded px-2 py-1 text-center">
+        <p class="font-mono text-[8px] text-tx3 mb-0.5">TIME</p>
+        <p id="s-time" class="font-mono text-[10px] text-p font-bold">O(n²)</p>
+      </div>
+      <div class="flex-1 bg-sur border border-str rounded px-2 py-1 text-center">
+        <p class="font-mono text-[8px] text-tx3 mb-0.5">SPACE</p>
+        <p id="s-space" class="font-mono text-[10px] text-p font-bold">O(1)</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Array Controls -->
+  <div class="px-4 py-3 border-b border-str">
+    <p class="font-mono text-[9px] text-tx3 uppercase tracking-wider mb-2">Array Input</p>
+    <!-- Input mode -->
+    <div class="flex gap-1 mb-3">
+      <button class="imode-btn active flex-1" data-mode="random">Random</button>
+      <button class="imode-btn flex-1" data-mode="sorted">Sorted</button>
+      <button class="imode-btn flex-1" data-mode="reverse">Reversed</button>
+      <button class="imode-btn flex-1" data-mode="custom">Custom</button>
+    </div>
+    <div id="custom-input-wrap" class="mb-3 hidden">
+      <input id="custom-array-input" type="text" class="w-full bg-sur border border-str rounded px-2 py-1 font-mono text-[10px] text-tx outline-none focus:border-p" placeholder="e.g. 5, 10, 15 or 0x0A, 0x1F"/>
+      <button id="btn-apply-custom" class="w-full mt-1 bg-str border border-str2 rounded px-2 py-1 font-mono text-[9px] text-tx3 hover:text-p transition-colors">Apply Input</button>
+    </div>
+    <!-- Size slider -->
+    <div id="size-slider-wrap">
+      <div class="flex justify-between items-center mb-1">
+        <span class="font-mono text-[9px] text-tx3">Elements</span>
+        <span id="s-size-val" class="font-mono text-[10px] text-p font-bold">15</span>
+      </div>
+      <input id="size-slider" type="range" min="5" max="30" value="15"
+        class="w-full h-0.5 bg-str rounded appearance-none cursor-pointer accent-p"/>
+    </div>
+  </div>
+
+  <!-- Register Map -->
+  <div class="px-4 py-3 border-b border-str">
+    <p class="font-mono text-[9px] text-tx3 uppercase tracking-wider mb-2">Register Map</p>
+    <div class="grid grid-cols-3 gap-1" id="reg-map">
+      <div class="reg-chip" id="reg-eax"><span class="text-[8px] text-tx3">EAX</span><span class="text-[10px] text-tx" id="rv-eax">—</span></div>
+      <div class="reg-chip" id="reg-ebx"><span class="text-[8px] text-tx3">EBX</span><span class="text-[10px] text-tx" id="rv-ebx">—</span></div>
+      <div class="reg-chip" id="reg-ecx"><span class="text-[8px] text-tx3">ECX</span><span class="text-[10px] text-tx" id="rv-ecx">—</span></div>
+      <div class="reg-chip" id="reg-edx"><span class="text-[8px] text-tx3">EDX</span><span class="text-[10px] text-tx" id="rv-edx">—</span></div>
+      <div class="reg-chip" id="reg-esi"><span class="text-[8px] text-tx3">ESI</span><span class="text-[10px] text-tx" id="rv-esi">—</span></div>
+      <div class="reg-chip" id="reg-edi"><span class="text-[8px] text-tx3">EDI</span><span class="text-[10px] text-tx" id="rv-edi">—</span></div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="px-4 py-3 border-b border-str">
+    <p class="font-mono text-[9px] text-tx3 uppercase tracking-wider mb-2">Execution Stats</p>
+    <div class="space-y-1.5">
+      <div class="flex justify-between"><span class="font-mono text-[10px] text-tx3">Comparisons</span><span id="s-comps" class="font-mono text-[10px] text-p font-bold">—</span></div>
+      <div class="flex justify-between"><span class="font-mono text-[10px] text-tx3">Swaps</span><span id="s-swaps" class="font-mono text-[10px] text-p font-bold">—</span></div>
+      <div class="flex justify-between"><span class="font-mono text-[10px] text-tx3">Passes</span><span id="s-passes" class="font-mono text-[10px] text-p font-bold">—</span></div>
+      <div class="flex justify-between"><span class="font-mono text-[10px] text-tx3">Frames</span><span id="s-frames" class="font-mono text-[10px] text-p font-bold">—</span></div>
+    </div>
+  </div>
+
+
+</aside>
+
+<!-- ══════════════════ MAIN ══════════════════ -->
+<main class="md:ml-60 mt-16 p-3 md:p-4 pb-24 min-h-screen flex flex-col gap-3">
+
+  <!-- Page header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 id="page-title" class="font-sans font-bold text-2xl text-tx">Bubble Sort</h1>
+      <p id="page-sub"   class="font-mono text-[10px] text-tx3 mt-0.5">Step-by-step visualization · SortVisualizer.asm</p>
+    </div>
+    <div class="flex gap-2">
+      <div class="flex items-center gap-1.5 bg-sur border border-str rounded-full px-3 py-1">
+        <span class="font-mono text-[9px] text-tx3">TIME</span>
+        <span id="badge-time" class="font-mono text-[10px] text-p font-bold">O(n²)</span>
+      </div>
+      <div class="flex items-center gap-1.5 bg-sur border border-str rounded-full px-3 py-1">
+        <span class="font-mono text-[9px] text-tx3">SPACE</span>
+        <span id="badge-space" class="font-mono text-[10px] text-p font-bold">O(1)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main grid -->
+  <div class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-3">
+
+    <!-- LEFT: Canvas + controls -->
+    <div class="md:col-span-8 flex flex-col gap-3">
+
+      <!-- Single canvas (normal mode) -->
+      <div id="single-wrap" class="relative bg-bg3 border border-str rounded-xl overflow-hidden" style="height:380px">
+        <!-- Grid bg -->
+        <div class="absolute inset-0 pointer-events-none" style="background:linear-gradient(rgba(46,46,46,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(46,46,46,.12) 1px,transparent 1px);background-size:40px 40px"></div>
+        <!-- Progress bar -->
+        <div class="absolute top-0 left-0 right-0 h-0.5 bg-str z-20"><div id="prog-bar" class="h-full bg-p" style="width:0%"></div></div>
+        <!-- Event label -->
+        <div class="absolute top-3 left-3 z-20 flex items-center gap-2">
+          <span id="event-lbl" class="font-mono text-[10px] text-tx3 bg-sur/80 border border-str px-2 py-0.5 rounded">Ready</span>
+          <span id="cur-asm-label" class="font-mono text-[10px] text-blu bg-sur/80 border border-str rounded px-2 py-0.5 hidden"></span>
+        </div>
+        <!-- Comparisons counter -->
+        <div class="absolute top-3 right-3 z-20 text-right">
+          <div class="font-mono text-[9px] text-tx3">COMPARISONS</div>
+          <div id="cmp-counter" class="font-mono text-lg text-yel font-bold leading-none">0</div>
+        </div>
+        <!-- Swaps counter -->
+        <div class="absolute top-3 right-28 z-20 text-right">
+          <div class="font-mono text-[9px] text-tx3">SWAPS</div>
+          <div id="swp-counter" class="font-mono text-lg text-red font-bold leading-none">0</div>
+        </div>
+        <!-- Loading overlay -->
+        <div id="loading" class="absolute inset-0 z-30 flex flex-col items-center justify-center bg-bg3/90">
+          <div class="w-8 h-8 border-2 border-p border-t-transparent rounded-full animate-spin mb-3"></div>
+          <p class="font-mono text-[10px] text-tx3">Computing frames...</p>
+        </div>
+        <!-- Bars -->
+        <div id="bar-wrap" class="absolute inset-0 z-10"></div>
+      </div>
+
+      <!-- Compare mode (two canvases side by side) -->
+      <div id="compare-wrap" class="gap-3 hidden">
+        <div class="relative bg-bg3 border border-str rounded-xl overflow-hidden flex-1" style="height:320px">
+          <div class="absolute inset-0 pointer-events-none" style="background:linear-gradient(rgba(46,46,46,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(46,46,46,.12) 1px,transparent 1px);background-size:40px 40px"></div>
+          <div id="cmp-lbl-a" class="absolute top-2 left-2 z-10 font-mono text-[9px] text-p bg-sur/80 border border-str px-2 py-0.5 rounded">Bubble Sort</div>
+          <div id="winner-a" class="winner-badge hidden">✓ DONE</div>
+          <div id="bar-wrap-a" class="absolute inset-0 z-10"></div>
+        </div>
+        <div class="relative bg-bg3 border border-str rounded-xl overflow-hidden flex-1" style="height:320px">
+          <div class="absolute inset-0 pointer-events-none" style="background:linear-gradient(rgba(46,46,46,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(46,46,46,.12) 1px,transparent 1px);background-size:40px 40px"></div>
+          <div id="cmp-lbl-b" class="absolute top-2 left-2 z-10 font-mono text-[9px] text-p bg-sur/80 border border-str px-2 py-0.5 rounded">Quick Sort</div>
+          <div id="winner-b" class="winner-badge hidden">✓ DONE</div>
+          <div id="bar-wrap-b" class="absolute inset-0 z-10"></div>
+        </div>
+      </div>
+
+      <!-- Compare Mode Dual ASM Panels -->
+      <div id="compare-asm-wrap" class="gap-3 hidden" style="height:220px">
+        <div class="bg-bg3 border border-str rounded-xl flex-1 flex flex-col overflow-hidden">
+          <div class="px-3 py-1.5 border-b border-str bg-sur/40 font-mono text-[9px] text-p uppercase tracking-wider" id="asm-lbl-a">Bubble Sort ASM</div>
+          <div id="asm-viewer-a" class="flex-1 overflow-y-auto py-1 text-tx3 relative"></div>
+        </div>
+        <div class="bg-bg3 border border-str rounded-xl flex-1 flex flex-col overflow-hidden">
+          <div class="px-3 py-1.5 border-b border-str bg-sur/40 font-mono text-[9px] text-p uppercase tracking-wider" id="asm-lbl-b">Quick Sort ASM</div>
+          <div id="asm-viewer-b" class="flex-1 overflow-y-auto py-1 text-tx3 relative"></div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="bg-bg3 border border-str rounded-xl p-4">
+        <div class="flex flex-col sm:flex-row gap-3 items-center">
+          <div class="flex items-center gap-2 flex-1">
+            <span class="font-mono text-[10px] text-tx3 shrink-0">SPEED</span>
+            <input id="speed-slider" type="range" min="1" max="100" value="50"
+              class="flex-1 h-0.5 bg-str rounded appearance-none cursor-pointer accent-p"/>
+            <span id="speed-lbl" class="font-mono text-[10px] text-tx3 w-6 shrink-0">50</span>
+          </div>
+          <button id="btn-gen" class="flex items-center gap-1.5 border border-str text-tx2 px-4 py-2 rounded-lg hover:border-p hover:text-p transition-colors font-mono text-[10px] font-bold uppercase shrink-0">
+            <span class="msym text-[14px]">refresh</span>NEW ARRAY
+          </button>
+        </div>
+        <div class="flex items-center justify-between mt-3 pt-3 border-t border-str">
+          <span id="frame-info" class="font-mono text-[10px] text-tx3">Frame <span id="fc">0</span>/<span id="ft">0</span></span>
+          <span id="sort-status" class="font-mono text-[10px] text-tx3">READY</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Panel with tabs -->
+    <div class="md:col-span-4 bg-bg3 border border-str rounded-xl flex flex-col overflow-hidden" style="max-height:calc(100vh - 160px)">
+      <!-- Mac-style dots + tabs -->
+      <div class="px-3 py-2 border-b border-str flex items-center gap-2 shrink-0 bg-sur/40">
+        <div class="flex gap-1 mr-2">
+          <div class="w-3 h-3 rounded-full bg-red"></div>
+          <div class="w-3 h-3 rounded-full bg-yel"></div>
+          <div class="w-3 h-3 rounded-full bg-grn"></div>
+        </div>
+        <button class="ptab active" data-panel="asm">ASM Code</button>
+        <button class="ptab" data-panel="stack">Stack</button>
+        <button class="ptab" data-panel="cplx">Complexity</button>
+        <button id="btn-export" class="ml-auto font-mono text-[9px] text-tx3 hover:text-p transition-colors uppercase tracking-wider">Export</button>
+      </div>
+
+      <!-- ASM Code panel -->
+      <div id="panel-asm" class="flex-1 overflow-y-auto relative" style="min-height:0">
+        <div id="asm-viewer" class="py-1 text-tx3">
+          <div class="asm-line comment-line"><span class="ln">—</span>Loading ASM source...</div>
+        </div>
+      </div>
+
+      <!-- Stack Trace panel -->
+      <div id="panel-stack" class="hidden flex-1 overflow-y-auto p-3">
+        <p class="font-mono text-[9px] text-tx3 mb-2 uppercase tracking-wider">Call Stack Depth</p>
+        <div id="stack-trace" class="flex flex-col gap-1">
+          <div class="font-mono text-[10px] text-tx3">No recursive calls yet</div>
+        </div>
+      </div>
+
+      <!-- Complexity Graph panel -->
+      <div id="panel-cplx" class="hidden flex-1 flex-col p-3" style="min-height:0">
+        <p class="font-mono text-[9px] text-tx3 mb-2 uppercase tracking-wider">Live Comparison Count vs Theoretical</p>
+        <canvas id="cplx-canvas" class="w-full flex-1 rounded bg-sur border border-str"></canvas>
+        <div class="flex gap-3 mt-2" id="cplx-legend">
+          <div class="flex items-center gap-1"><div class="w-3 h-0.5 bg-p"></div><span class="font-mono text-[8px] text-tx3">Actual (A)</span></div>
+          <div id="legend-b" class="hidden items-center gap-1"><div class="w-3 h-0.5 bg-blu"></div><span class="font-mono text-[8px] text-tx3">Actual (B)</span></div>
+          <div class="flex items-center gap-1"><div class="w-3 h-0.5 bg-str2"></div><span class="font-mono text-[8px] text-tx3">Theoretical</span></div>
+        </div>
+      </div>
+
+      <!-- Metrics footer -->
+      <div class="border-t border-str p-3 bg-sur/30 shrink-0">
+        <div class="grid grid-cols-2 gap-2">
+          <div class="bg-sur rounded p-2">
+            <p class="font-mono text-[8px] text-tx3 uppercase mb-1">Comparisons</p>
+            <p id="m-comps" class="font-mono text-base text-pl font-bold">—</p>
+          </div>
+          <div class="bg-sur rounded p-2">
+            <p class="font-mono text-[8px] text-tx3 uppercase mb-1">Swaps</p>
+            <p id="m-swaps" class="font-mono text-base text-pl font-bold">—</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ══════════════════ BOTTOM PLAYBACK ══════════════════ -->
+<div class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-2.5 rounded-full border border-str" style="background:rgba(17,17,17,.95);backdrop-filter:blur(16px);box-shadow:0 0 24px rgba(255,109,31,.2)">
+  <button id="btn-sound" class="msym text-[20px] off hover:scale-110 active:scale-95 transition-all" title="Toggle sound">volume_off</button>
+  <div class="w-px h-5 bg-str mx-1"></div>
+  <button id="btn-rew"  class="msym text-[20px] text-tx2 hover:text-pl hover:scale-110 active:scale-95 transition-all" title="Rewind">fast_rewind</button>
+  <button id="btn-back" class="msym text-[20px] text-tx2 hover:text-pl hover:scale-110 active:scale-95 transition-all" title="Step back">skip_previous</button>
+  <button id="btn-play" class="w-11 h-11 rounded-full flex items-center justify-center text-black font-bold transition-all hover:scale-110 active:scale-95" style="background:var(--p);box-shadow:0 0 18px rgba(255,109,31,.6)">
+    <span class="msym fill text-[22px]">play_arrow</span>
+  </button>
+  <button id="btn-step" class="msym text-[20px] text-tx2 hover:text-pl hover:scale-110 active:scale-95 transition-all" title="Step forward">skip_next</button>
+  <button id="btn-end"  class="msym text-[20px] text-tx2 hover:text-pl hover:scale-110 active:scale-95 transition-all" title="Jump to end">fast_forward</button>
+</div>
+
+<!-- ══════════════════ SCRIPT ══════════════════ -->
+<script>
+'use strict';
+// ─── Constants ────────────────────────────────────────────────
+const API = 'http://localhost:3001';
+
+// ASM label → line ranges + semantic info for each algorithm
+const ASM_LABELS = {
+  bubble: {
+    proc: {start:459, end:507, name:'BubbleSort'},
+    events: {
+      init:    [{lines:[459,466], label:'BubbleSort / WriteAlgoHeader + initial snapshot', type:'jmp'}],
+      outer:   [{lines:[472,474], label:'BS_outer: cmp ecx, ebx  ; i < n-1?',    type:'cmp'}],
+      inner:   [{lines:[482,488], label:'BS_inner: CMP theArray[j] vs [j+1]',     type:'cmp'}],
+      compare: [{lines:[486,489], label:'MOV eax,[j]  MOV edx,[j+1]  CMP eax,edx', type:'cmp'}],
+      swap:    [{lines:[491,493], label:'SWAP: MOV [j],edx  MOV [j+1],eax',       type:'swp'}],
+      noswap:  [{lines:[495,497], label:'BS_no_swap: INC esi  JMP BS_inner',       type:'jmp'}],
+      pass:    [{lines:[499,502], label:'BS_end_inner: WritePassToFile  INC ecx', type:'jmp'}],
+      done:    [{lines:[504,506], label:'BS_done: POPAD  RET',                     type:'jmp'}],
+    }
+  },
+  selection: {
+    proc: {start:517, end:569, name:'SelectionSort'},
+    events: {
+      init:    [{lines:[517,524], label:'SelectionSort / WriteAlgoHeader + snapshot', type:'jmp'}],
+      outer:   [{lines:[528,532], label:'SS_outer: i < n-1?',        type:'cmp'}],
+      compare: [{lines:[538,545], label:'SS_find_min: CMP array[j] vs array[minIdx]', type:'cmp'}],
+      swap:    [{lines:[551,559], label:'SS_do_swap: swap array[i] ↔ array[minIdx]',  type:'swp'}],
+      pass:    [{lines:[561,564], label:'WritePassToFile  INC ecx',    type:'jmp'}],
+      done:    [{lines:[566,568], label:'SS_done: POPAD  RET',         type:'jmp'}],
+    }
+  },
+  insertion: {
+    proc: {start:580, end:627, name:'InsertionSort'},
+    events: {
+      init:    [{lines:[580,587], label:'InsertionSort / WriteAlgoHeader + snapshot', type:'jmp'}],
+      outer:   [{lines:[591,596], label:'IS_outer: MOV eax,[i]  MOV tempKey,eax',    type:'cmp'}],
+      compare: [{lines:[601,607], label:'IS_inner: CMP array[j] vs tempKey',          type:'cmp'}],
+      shift:   [{lines:[609,612], label:'SHIFT: MOV array[j+1],array[j]  DEC esi',   type:'swp'}],
+      place:   [{lines:[614,618], label:'IS_place: MOV array[j+1],tempKey',           type:'swp'}],
+      pass:    [{lines:[620,622], label:'WritePassToFile  INC ecx',                   type:'jmp'}],
+      done:    [{lines:[624,626], label:'IS_done: POPAD  RET',                        type:'jmp'}],
+    }
+  },
+  quick: {
+    proc: {start:637, end:733, name:'QuickSort + QuickSortRange'},
+    events: {
+      init:    [{lines:[637,652], label:'QuickSort: WriteAlgoHeader  CALL QuickSortRange', type:'jmp'}],
+      recurse: [{lines:[659,671], label:'QuickSortRange: PUSH EAX/EBX  compute pivot',      type:'jmp'}],
+      compare: [{lines:[673,684], label:'QSR_scan_left: CMP array[i] vs pivot',            type:'cmp'}],
+      pivot:   [{lines:[686,693], label:'QSR_scan_right: CMP array[j] vs pivot',           type:'cmp'}],
+      swap:    [{lines:[695,706], label:'QSR_swap: XCHG array[i] ↔ array[j]',              type:'swp'}],
+      pass:    [{lines:[708,709], label:'QSR_partition_done: WritePassToFile',              type:'jmp'}],
+      recurseL:[{lines:[711,718], label:'Recurse LEFT: CALL QuickSortRange(lo, j)',         type:'jmp'}],
+      recurseR:[{lines:[720,728], label:'Recurse RIGHT: CALL QuickSortRange(i, hi)',        type:'jmp'}],
+      done:    [{lines:[730,732], label:'QSR_done: POPAD  RET',                            type:'jmp'}],
+    }
+  },
+  merge: {
+    proc: {start:743, end:875, name:'MergeSort + MergeRange'},
+    events: {
+      init:    [{lines:[743,755], label:'MergeSort: WriteAlgoHeader  ESI=1 (run width)', type:'jmp'}],
+      outer:   [{lines:[757,759], label:'MS_width_loop: CMP esi,arraySize ; done?',      type:'cmp'}],
+      inner:   [{lines:[763,786], label:'MS_left_loop: compute left/mid/right, CALL MergeRange', type:'cmp'}],
+      compare: [{lines:[812,821], label:'MR_merge_loop: CMP array[i] vs array[j]',       type:'cmp'}],
+      takeleft:[{lines:[830,835], label:'MR_take_left: copy left element to temp buffer', type:'swp'}],
+      takeright:[{lines:[823,828],label:'MR_take_right: copy right element to temp buffer',type:'swp'}],
+      copyback:[{lines:[857,868], label:'MR_copy_back: write merged elements back',       type:'swp'}],
+      pass:    [{lines:[794,796], label:'MS_end_width: WritePassToFile  SHL esi,1',       type:'jmp'}],
+      done:    [{lines:[800,801], label:'MergeSort done: POPAD  RET',                     type:'jmp'}],
+    }
+  }
+};
+
+// ─── State ────────────────────────────────────────────────────
+const ALGOS = [
+  {id:'bubble',    name:'Bubble Sort',    time:'O(n²)',      space:'O(1)',      tab:'tab-bubble'},
+  {id:'selection', name:'Selection Sort', time:'O(n²)',      space:'O(1)',      tab:'tab-selection'},
+  {id:'insertion', name:'Insertion Sort', time:'O(n²)',      space:'O(1)',      tab:'tab-insertion'},
+  {id:'quick',     name:'Quick Sort',     time:'O(n log n)', space:'O(log n)', tab:'tab-quick'},
+  {id:'merge',     name:'Merge Sort',     time:'O(n log n)', space:'O(n)',     tab:'tab-merge'},
+];
+
+let curAlgo       = ALGOS[0];
+let frames        = [], events2  = [];
+let frameIdx      = 0;
+let playing       = false;
+let playTimer     = null;
+let speedMs       = 150;
+let arraySize     = 15;
+let inputMode     = 'random';
+let soundOn       = false;
+let backendUp     = false;
+let asmLines      = [];       // from /api/asm-source
+let cmpCount      = 0, swpCount = 0;
+let compareMode   = false;
+let framesB       = [], eventsB = [];
+let frameIdxA     = 0, frameIdxB = 0;
+let doneA         = false, doneB = false;
+
+// ─── Audio ────────────────────────────────────────────────────
+let audioCtx = null;
+function ensureAudio(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
+function playTone(freq, dur=80, vol=0.08, type='sine'){
+  if(!soundOn) return;
+  ensureAudio();
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.connect(g); g.connect(audioCtx.destination);
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol, audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(.001, audioCtx.currentTime + dur/1000);
+  o.start(); o.stop(audioCtx.currentTime + dur/1000);
+}
+function toneForValue(val, maxVal){ return 150 + (val/maxVal)*700; }
+
+// ─── DOM refs ─────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const barWrap   = $('bar-wrap');
+const loading   = $('loading');
+const progBar   = $('prog-bar');
+const eventLbl  = $('event-lbl');
+const curAsmLbl = $('cur-asm-label');
+const fcEl = $('fc'), ftEl = $('ft');
+const statusEl  = $('sort-status');
+const cmpCtr    = $('cmp-counter');
+const swpCtr    = $('swp-counter');
+const mComps    = $('m-comps'), mSwaps = $('m-swaps');
+const sComps    = $('s-comps'), sSwaps = $('s-swaps');
+const sPasses   = $('s-passes'), sFrames = $('s-frames');
+const asmViewer = $('asm-viewer');
+const stackTrace= $('stack-trace');
+const cplxCanvas= $('cplx-canvas');
+const btnPlay   = $('btn-play');
+const btnSound  = $('btn-sound');
+
+// ─── Complexity graph ─────────────────────────────────────────
+let cplxDataA = [];
+let cplxDataB = [];
+let cplxTheo = [];
+function initCplxGraph(){
+  cplxDataA = []; cplxDataB = []; cplxTheo = [];
+  drawCplxGraph();
+}
+function pushCplxData(actualA, actualB, frame, total){
+  const n = arraySize;
+  const theoretical = curAlgo.time.includes('log')
+    ? n * Math.log2(n) * (frame/total) * 1.2
+    : (n*n/2) * (frame/total);
+  cplxDataA.push(actualA);
+  if(actualB !== undefined) cplxDataB.push(actualB);
+  cplxTheo.push(Math.round(theoretical));
+  drawCplxGraph();
+}
+function drawCplxGraph(){
+  const c = cplxCanvas;
+  const ctx = c.getContext('2d');
+  const W = c.offsetWidth; const H = c.offsetHeight || 100;
+  c.width = W; c.height = H;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#161616'; ctx.fillRect(0,0,W,H);
+  const maxV = Math.max(...cplxDataA, cplxDataB.length ? Math.max(...cplxDataB) : 0, ...cplxTheo, 1);
+  const toY = v => H - 4 - (v/maxV)*(H-8);
+  const toX = (i,len) => len < 2 ? 4 : 4 + (i/(len-1))*(W-8);
+  // Theoretical
+  if(cplxTheo.length>1){
+    ctx.beginPath(); ctx.strokeStyle='#3a3a3a'; ctx.lineWidth=1;
+    cplxTheo.forEach((v,i)=>i===0?ctx.moveTo(toX(i,cplxTheo.length),toY(v)):ctx.lineTo(toX(i,cplxTheo.length),toY(v)));
+    ctx.stroke();
+  }
+  // Actual A
+  if(cplxDataA.length>1){
+    ctx.beginPath(); ctx.strokeStyle='#FF6D1F'; ctx.lineWidth=2;
+    cplxDataA.forEach((v,i)=>i===0?ctx.moveTo(toX(i,cplxDataA.length),toY(v)):ctx.lineTo(toX(i,cplxDataA.length),toY(v)));
+    ctx.stroke();
+    const last = cplxDataA.length-1;
+    ctx.beginPath(); ctx.arc(toX(last,cplxDataA.length),toY(cplxDataA[last]),3,0,Math.PI*2);
+    ctx.fillStyle='#FF6D1F'; ctx.fill();
+  }
+  // Actual B
+  if(cplxDataB.length>1){
+    ctx.beginPath(); ctx.strokeStyle='#89ceff'; ctx.lineWidth=2;
+    cplxDataB.forEach((v,i)=>i===0?ctx.moveTo(toX(i,cplxDataB.length),toY(v)):ctx.lineTo(toX(i,cplxDataB.length),toY(v)));
+    ctx.stroke();
+    const last = cplxDataB.length-1;
+    ctx.beginPath(); ctx.arc(toX(last,cplxDataB.length),toY(cplxDataB[last]),3,0,Math.PI*2);
+    ctx.fillStyle='#89ceff'; ctx.fill();
+  }
+}
+
+// ─── Register simulation ──────────────────────────────────────
+let prevRegs = {};
+function updateRegisters(ev, frame, idx){
+  const n = frame ? frame.length : arraySize;
+  const reg = {};
+  // Simulate registers based on algorithm and event type
+  if(curAlgo.id === 'bubble'){
+    // ECX=i (outer), ESI=j (inner), EDI=n-1-i, EBX=n-1
+    reg.ECX = idx; reg.EBX = n-1;
+    if(ev && ev.indices && ev.indices.length>0){
+      reg.ESI = ev.indices[0];
+      reg.EDI = n-1-Math.floor(idx/(n-1)||0);
+      if(ev.type==='compare'||ev.type==='swap'){
+        reg.EAX = frame ? frame[ev.indices[0]] : '?';
+        reg.EDX = frame && ev.indices[1]!==undefined ? frame[ev.indices[1]] : '?';
+      }
+    }
+  } else if(curAlgo.id === 'selection'){
+    reg.ECX = idx; reg.EBX = n-1;
+    if(ev && ev.indices && ev.indices.length>0){
+      reg.ESI = ev.indices[0]; reg.EDI = ev.indices[1]||0;
+      reg.EAX = frame ? frame[ev.indices[0]] : '?';
+    }
+  } else if(curAlgo.id === 'insertion'){
+    reg.ECX = idx;
+    if(ev && ev.indices && ev.indices.length>0){
+      reg.ESI = ev.indices[0]; reg.EDI = ev.indices[1]||0;
+      reg.EAX = frame ? frame[ev.indices[0]] : '?';
+    }
+  } else if(curAlgo.id === 'quick'){
+    if(ev && ev.indices && ev.indices.length>=2){
+      reg.ESI = ev.indices[0]; reg.EDI = ev.indices[1];
+      reg.EAX = frame ? frame[ev.indices[0]] : '?';
+      reg.EBX = frame && ev.indices[1]!==undefined ? frame[ev.indices[1]] : '?';
+      reg.ECX = ev.pivot !== undefined ? ev.pivot : '?';
+    }
+  } else if(curAlgo.id === 'merge'){
+    if(ev && ev.indices && ev.indices.length>0){
+      reg.ESI = ev.indices[0]||0; reg.EDI = ev.indices[1]||0;
+    }
+    reg.ECX = idx;
+  }
+
+  ['EAX','EBX','ECX','EDX','ESI','EDI'].forEach(r=>{
+    const rkey = r.toLowerCase();
+    const chip = $('reg-'+rkey);
+    const valEl = $('rv-'+rkey);
+    if(!chip || !valEl) return;
+    const v = reg[r]!==undefined ? String(reg[r]) : '—';
+    if(v !== String(prevRegs[r]||'—')){
+      chip.classList.add('changed');
+      setTimeout(()=>chip.classList.remove('changed'),400);
+    }
+    valEl.textContent = v;
+    prevRegs[r] = v;
+  });
+}
+
+// ─── Stack trace ──────────────────────────────────────────────
+let callStack = [];
+function updateStackTrace(ev, frameIndex){
+  if(curAlgo.id === 'quick' || curAlgo.id === 'merge'){
+    // Simulate recursion depth based on frame index
+    const maxDepth = Math.ceil(Math.log2(arraySize));
+    const depth = Math.min(maxDepth, Math.floor(frameIndex / Math.max(1, Math.floor(frames.length/maxDepth))));
+    callStack = [];
+    const proc = curAlgo.id === 'quick' ? 'QuickSortRange' : 'MergeRange';
+    for(let d=0; d<=depth; d++){
+      const lo = d === 0 ? 0 : Math.floor(Math.random()*arraySize/2);
+      callStack.push({proc, depth:d, active: d===depth});
+    }
+  } else {
+    callStack = [{proc: curAlgo.id === 'bubble' ? 'BubbleSort' : curAlgo.id === 'selection' ? 'SelectionSort' : 'InsertionSort', depth:0, active:true}];
+  }
+
+  stackTrace.innerHTML = callStack.slice().reverse().map((f,i)=>`
+    <div class="stack-frame ${f.active?'active':''}">
+      <span class="text-tx3">#${callStack.length-1-i}</span>
+      <span class="ml-1">${f.proc}</span>
+      ${f.active ? '<span class="ml-1 text-[#FF6D1F]">← current</span>' : ''}
+    </div>`
+  ).join('');
+}
+
+// ─── ASM Viewer ───────────────────────────────────────────────
+let lastAsmRange = null;
+function loadAsmSource(){
+  fetch(`${API}/api/asm-source`)
+    .then(r=>r.json())
+    .then(data=>{
+      if(!data.success) return;
+      asmLines = data.lines;
+      renderAsmViewer(null);
+      renderAsmDualViewer(null, null);
+    })
+    .catch(()=>{
+      const err = '<div class="asm-line comment-line"><span class="ln">—</span>; ASM source unavailable — backend offline</div>';
+      asmViewer.innerHTML = err;
+      $('asm-viewer-a').innerHTML = err;
+      $('asm-viewer-b').innerHTML = err;
+    });
+}
+
+function renderAsmViewer(ev){
+  if(!asmLines.length) return;
+
+  // Determine which lines to highlight based on event
+  let hlRange = null, hlType = 'cmp', labelStr = '';
+  const labels = ASM_LABELS[curAlgo.id];
+
+  if(ev && labels){
+    const etype = ev.type;
+    let evMap = null;
+    if(etype === 'compare') evMap = labels.events.compare || labels.events.inner;
+    else if(etype === 'swap') evMap = labels.events.swap || labels.events.shift || labels.events.place;
+    else if(etype === 'pass') evMap = labels.events.pass;
+    else if(etype === 'done') evMap = labels.events.done;
+    else if(etype === 'init') evMap = labels.events.init;
+    else evMap = labels.events.outer || labels.events.inner;
+
+    if(evMap && evMap[0]){
+      hlRange = evMap[0].lines;
+      hlType  = evMap[0].type;
+      labelStr = evMap[0].label;
+    }
+  }
+
+  // Only re-render the section around the proc (performance)
+  const proc = labels ? labels.proc : {start:1, end:asmLines.length};
+  const showStart = Math.max(0, proc.start - 3);
+  const showEnd   = Math.min(asmLines.length-1, proc.end + 2);
+
+  let html = '';
+  for(let i = showStart; i <= showEnd; i++){
+    const ln = asmLines[i];
+    if(!ln) continue;
+    let cls = 'asm-line';
+    if(ln.type==='comment') cls += ' comment-line';
+    else if(ln.type==='label') cls += ' label-line';
+    else if(ln.type==='directive') cls += ' directive-line';
+
+    if(hlRange && ln.lineNum >= hlRange[0] && ln.lineNum <= hlRange[1]){
+      cls += ` hl-${hlType}`;
+    }
+
+    const esc = ln.content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    html += `<div class="${cls}" id="aln-${ln.lineNum}"><span class="ln">${ln.lineNum}</span>${esc}</div>`;
+  }
+  asmViewer.innerHTML = html;
+
+  // Scroll to highlighted line
+  if(hlRange){
+    const el = asmViewer.querySelector(`#aln-${hlRange[0]}`);
+    if(el) el.scrollIntoView({block:'center', behavior:'smooth'});
+    curAsmLbl.textContent = labelStr;
+    curAsmLbl.classList.remove('hidden');
+  } else {
+    curAsmLbl.classList.add('hidden');
+  }
+  lastAsmRange = hlRange;
+}
+
+// Render dual ASM viewers for compare mode
+function renderAsmDualViewer(evA, evB){
+  if(!asmLines.length) return;
+  const renderSingle = (viewerId, ev, algoId) => {
+    const viewer = $(viewerId);
+    if(!viewer) return;
+    let hlRange = null, hlType = 'cmp';
+    const labels = ASM_LABELS[algoId];
+    if(ev && labels){
+      const etype = ev.type;
+      let evMap = null;
+      if(etype === 'compare') evMap = labels.events.compare || labels.events.inner;
+      else if(etype === 'swap') evMap = labels.events.swap || labels.events.shift || labels.events.place;
+      else if(etype === 'pass') evMap = labels.events.pass;
+      else if(etype === 'done') evMap = labels.events.done;
+      else if(etype === 'init') evMap = labels.events.init;
+      else evMap = labels.events.outer || labels.events.inner;
+      if(evMap && evMap[0]){ hlRange = evMap[0].lines; hlType = evMap[0].type; }
+    }
+    const proc = labels ? labels.proc : {start:1, end:asmLines.length};
+    const showStart = Math.max(0, proc.start - 3);
+    const showEnd   = Math.min(asmLines.length-1, proc.end + 2);
+    let html = '';
+    for(let i = showStart; i <= showEnd; i++){
+      const ln = asmLines[i];
+      if(!ln) continue;
+      let cls = 'asm-line';
+      if(ln.type==='comment') cls += ' comment-line';
+      else if(ln.type==='label') cls += ' label-line';
+      else if(ln.type==='directive') cls += ' directive-line';
+      if(hlRange && ln.lineNum >= hlRange[0] && ln.lineNum <= hlRange[1]) cls += ` hl-${hlType}`;
+      const esc = ln.content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      html += `<div class="${cls}" id="aln-${viewerId}-${ln.lineNum}"><span class="ln">${ln.lineNum}</span>${esc}</div>`;
+    }
+    viewer.innerHTML = html;
+    if(hlRange){
+      const el = viewer.querySelector(`#aln-${viewerId}-${hlRange[0]}`);
+      if(el) el.scrollIntoView({block:'center', behavior:'smooth'});
+    }
+  };
+  const algoA = ALGOS.find(a=>a.id===$('sel-algo-a').value) || curAlgo;
+  const algoB = ALGOS.find(a=>a.id===$('sel-algo-b').value) || ALGOS[(ALGOS.findIndex(a=>a.id===curAlgo.id)+1)%ALGOS.length];
+  renderSingle('asm-viewer-a', evA, algoA.id);
+  renderSingle('asm-viewer-b', evB, algoB.id);
+}
+
+// ─── JS sort algorithms (with event annotation) ───────────────
+function genArray(){
+  if(inputMode === 'custom') {
+    const raw = $('custom-array-input').value;
+    let arr = raw.split(/[\s,]+/).map(s => {
+      if(s.trim().toLowerCase().startsWith('0x')) return parseInt(s.trim(), 16);
+      return parseInt(s.trim(), 10);
+    }).filter(n => !isNaN(n));
+    if(arr.length === 0) arr = [10, 20, 30]; // Fallback if empty
+    arr = arr.slice(0, 30); // Max 30 elements supported visually
+    arraySize = arr.length;
+    $('size-slider').value = arraySize;
+    $('s-size-val').textContent = arraySize;
+    return arr;
+  }
+  const arr = Array.from({length:arraySize}, ()=>Math.floor(Math.random()*90)+10);
+  if(inputMode==='sorted') arr.sort((a,b)=>a-b);
+  else if(inputMode==='reverse') arr.sort((a,b)=>b-a);
+  return arr;
+}
+
+function jsBubble(arr){
+  const a=[...arr], F=[[...a]], E=[{type:'init',indices:[],passNumber:0}];
+  let c=0,s=0;
+  for(let i=0;i<a.length-1;i++){
+    for(let j=0;j<a.length-1-i;j++){
+      c++; F.push([...a]); E.push({type:'compare',indices:[j,j+1],values:[a[j],a[j+1]]});
+      if(a[j]>a[j+1]){s++;[a[j],a[j+1]]=[a[j+1],a[j]]; F.push([...a]); E.push({type:'swap',indices:[j,j+1],values:[a[j],a[j+1]]});}
+    }
+    // mark sorted region: last i+1 elements sorted
+    F.push([...a]); E.push({type:'pass',passNumber:i+1,sortedFrom:a.length-1-i,indices:[]});
+  }
+  F.push([...a]); E.push({type:'done',indices:[]});
+  return {frames:F,events:E,stats:{comparisons:c,swaps:s,passes:a.length-1,totalFrames:F.length}};
+}
+function jsSelection(arr){
+  const a=[...arr], F=[[...a]], E=[{type:'init',indices:[],passNumber:0}];
+  let c=0,s=0,p=0;
+  for(let i=0;i<a.length-1;i++){
+    let mi=i; p++;
+    for(let j=i+1;j<a.length;j++){ c++; F.push([...a]); E.push({type:'compare',indices:[mi,j],values:[a[mi],a[j]]}); if(a[j]<a[mi])mi=j; }
+    if(mi!==i){ s++;[a[i],a[mi]]=[a[mi],a[i]]; F.push([...a]); E.push({type:'swap',indices:[i,mi],values:[a[i],a[mi]]}); }
+    F.push([...a]); E.push({type:'pass',passNumber:p,sortedTo:i,indices:[]});
+  }
+  F.push([...a]); E.push({type:'done',indices:[]});
+  return {frames:F,events:E,stats:{comparisons:c,swaps:s,passes:p,totalFrames:F.length}};
+}
+function jsInsertion(arr){
+  const a=[...arr], F=[[...a]], E=[{type:'init',indices:[],passNumber:0}];
+  let c=0,s=0,p=0;
+  for(let i=1;i<a.length;i++){
+    p++; let j=i;
+    while(j>0){ c++; F.push([...a]); E.push({type:'compare',indices:[j-1,j],values:[a[j-1],a[j]]});
+      if(a[j-1]>a[j]){s++;[a[j-1],a[j]]=[a[j],a[j-1]]; F.push([...a]); E.push({type:'swap',indices:[j-1,j],values:[a[j-1],a[j]]}); j--;}else break;}
+    F.push([...a]); E.push({type:'pass',passNumber:p,sortedTo:i,indices:[]});
+  }
+  F.push([...a]); E.push({type:'done',indices:[]});
+  return {frames:F,events:E,stats:{comparisons:c,swaps:s,passes:p,totalFrames:F.length}};
+}
+function jsQuick(arr){
+  const a=[...arr], F=[[...a]], E=[{type:'init',indices:[],passNumber:0}];
+  let c=0,s=0,p=0;
+  function qs(lo,hi){
+    if(lo>=hi) return;
+    let i=lo,j=hi;
+    const piv=a[Math.floor((lo+hi)/2)];
+    while(i<=j){
+      while(a[i]<piv){c++;F.push([...a]);E.push({type:'compare',indices:[i,Math.floor((lo+hi)/2)],values:[a[i],piv],pivot:piv});i++;}
+      while(a[j]>piv){c++;F.push([...a]);E.push({type:'compare',indices:[j,Math.floor((lo+hi)/2)],values:[a[j],piv],pivot:piv});j--;}
+      if(i<=j){s++;[a[i],a[j]]=[a[j],a[i]];F.push([...a]);E.push({type:'swap',indices:[i,j],values:[a[i],a[j]],pivot:piv});i++;j--;}
+    }
+    p++;F.push([...a]);E.push({type:'pass',passNumber:p,indices:[],pivot:piv});
+    qs(lo,j); qs(i,hi);
+  }
+  qs(0,a.length-1);
+  F.push([...a]); E.push({type:'done',indices:[]});
+  return {frames:F,events:E,stats:{comparisons:c,swaps:s,passes:p,totalFrames:F.length}};
+}
+function jsMerge(arr){
+  const a=[...arr], F=[[...a]], E=[{type:'init',indices:[],passNumber:0}];
+  let c=0,s=0,p=0;
+  function merge(l,m,r){
+    const L=a.slice(l,m+1),R=a.slice(m+1,r+1);
+    let i=0,j=0,k=l;
+    while(i<L.length&&j<R.length){c++;F.push([...a]);E.push({type:'compare',indices:[l+i,m+1+j],values:[L[i],R[j]]});
+      if(L[i]<=R[j]){a[k++]=L[i++];}else{a[k++]=R[j++];}
+      s++;F.push([...a]);E.push({type:'swap',indices:[k-1],values:[a[k-1]]});}
+    while(i<L.length){a[k++]=L[i++];s++;F.push([...a]);E.push({type:'swap',indices:[k-1],values:[a[k-1]]});}
+    while(j<R.length){a[k++]=R[j++];s++;F.push([...a]);E.push({type:'swap',indices:[k-1],values:[a[k-1]]});}
+  }
+  function ms(l,r){if(l>=r)return;const m=Math.floor((l+r)/2);ms(l,m);ms(m+1,r);merge(l,m,r);p++;F.push([...a]);E.push({type:'pass',passNumber:p,indices:[]});}
+  ms(0,a.length-1);
+  F.push([...a]); E.push({type:'done',indices:[]});
+  return {frames:F,events:E,stats:{comparisons:c,swaps:s,passes:p,totalFrames:F.length}};
+}
+function runJS(arr, name){
+  if(name.includes('Bubble')) return jsBubble(arr);
+  if(name.includes('Selection')) return jsSelection(arr);
+  if(name.includes('Insertion')) return jsInsertion(arr);
+  if(name.includes('Quick')) return jsQuick(arr);
+  if(name.includes('Merge')) return jsMerge(arr);
+  return jsBubble(arr);
+}
+
+// ─── Render bars ──────────────────────────────────────────────
+function renderBars(container, frameArr, ev, sortedSet){
+  if(!frameArr) return;
+  const H = container.clientHeight || 340;
+  const W = container.clientWidth  || 600;
+  const n = frameArr.length;
+  const maxV = Math.max(...frameArr, 1);
+  const gapPx = Math.max(1, Math.min(3, Math.floor(5 - n/10)));
+  const barW  = Math.max(3, Math.floor((W - gapPx*(n-1)) / n));
+  const usableH = H - 28; // leave room for labels
+
+  container.innerHTML = '';
+
+  frameArr.forEach((val, i) => {
+    const barH = Math.max(3, Math.floor((val/maxV)*usableH));
+    const x    = i*(barW + gapPx);
+
+    // Determine bar state
+    let state = 'state-default';
+    if(ev){
+      if(ev.type === 'done') state = 'state-sorted';
+      else if(sortedSet && sortedSet.has(i)) state = 'state-sorted';
+      else if(ev.type === 'compare' && ev.indices && ev.indices.includes(i)) state = 'state-compare';
+      else if(ev.type === 'swap' && ev.indices && ev.indices.includes(i)) state = 'state-swap';
+      else if((ev.type==='compare'||ev.type==='swap') && ev.indices && ev.indices.length>0 && !ev.indices.includes(i)) state = 'state-dim';
+      // Pivot highlighting for quick sort
+      if(curAlgo.id==='quick' && ev.pivot !== undefined && val === ev.pivot && state==='state-dim') state = 'state-pivot';
+    }
+
+    const bar = document.createElement('div');
+    bar.className = `bar ${state}`;
+    bar.style.cssText = `left:${x}px;width:${barW}px;height:${barH}px`;
+
+    // Value label
+    if(barW >= 14){
+      const lbl = document.createElement('div');
+      lbl.style.cssText = `position:absolute;top:-16px;left:0;width:${barW}px;text-align:center;font-family:'JetBrains Mono';font-size:8px;color:#ffb596;overflow:hidden;white-space:nowrap`;
+      lbl.textContent = val;
+      bar.appendChild(lbl);
+    }
+    container.appendChild(bar);
+  });
+}
+
+// ─── Sorted set tracking ──────────────────────────────────────
+function computeSortedSet(algoId, ev, frameIndex, total){
+  const s = new Set();
+  if(!ev) return s;
+  if(ev.type==='done'){
+    for(let i=0;i<arraySize;i++) s.add(i);
+    return s;
+  }
+  if(algoId==='bubble' && ev.sortedFrom!==undefined){
+    for(let i=ev.sortedFrom;i<arraySize;i++) s.add(i);
+  } else if((algoId==='selection'||algoId==='insertion') && ev.sortedTo!==undefined){
+    for(let i=0;i<=ev.sortedTo;i++) s.add(i);
+  }
+  return s;
+}
+
+// ─── Render frame ─────────────────────────────────────────────
+let sortedSetCumulative = new Set();
+function renderFrame(idx){
+  const frame = frames[idx];
+  const ev    = events2[idx] || {type:'init',indices:[]};
+  if(!frame) return;
+
+  // Track sorted region cumulatively
+  const newSorted = computeSortedSet(curAlgo.id, ev, idx, frames.length);
+  newSorted.forEach(i => sortedSetCumulative.add(i));
+  if(ev.type==='done') for(let i=0;i<arraySize;i++) sortedSetCumulative.add(i);
+
+  renderBars(barWrap, frame, ev, sortedSetCumulative);
+
+  // Progress
+  const pct = frames.length>1 ? (idx/(frames.length-1))*100 : 0;
+  progBar.style.width = pct + '%';
+
+  // Frame counter
+  fcEl.textContent = idx+1; ftEl.textContent = frames.length;
+
+  // Event label
+  if(ev.type==='compare') eventLbl.textContent = `CMP [${ev.indices?.join(', ')||''}]`;
+  else if(ev.type==='swap') eventLbl.textContent = `SWAP [${ev.indices?.join(', ')||''}]`;
+  else if(ev.type==='pass') eventLbl.textContent = `Pass ${ev.passNumber} done`;
+  else if(ev.type==='done') eventLbl.textContent = '✓ Sort Complete';
+  else eventLbl.textContent = 'Init';
+
+  // Status
+  statusEl.textContent = ev.type==='done' ? '✓ SORTED' : idx===0 ? 'READY' : 'RUNNING';
+  statusEl.style.color = ev.type==='done' ? 'var(--grn)' : idx===0 ? '#555' : 'var(--yel)';
+
+  // Counters
+  if(ev.type==='compare'){
+    cmpCount++;
+    cmpCtr.textContent = cmpCount;
+    cmpCtr.classList.remove('bumping'); void cmpCtr.offsetWidth; cmpCtr.classList.add('bumping');
+    // Sound
+    if(soundOn && frame && ev.indices){
+      playTone(toneForValue(frame[ev.indices[0]]||50, 100), 60, 0.05);
+    }
+  }
+  if(ev.type==='swap'){
+    swpCount++;
+    swpCtr.textContent = swpCount;
+    swpCtr.classList.remove('bumping'); void swpCtr.offsetWidth; swpCtr.classList.add('bumping');
+    if(soundOn && frame && ev.indices){
+      playTone(toneForValue(frame[ev.indices[0]]||50, 100), 100, 0.1, 'square');
+    }
+  }
+
+  // Metrics
+  mComps.textContent = cmpCount; mSwaps.textContent = swpCount;
+  sComps.textContent = cmpCount; sSwaps.textContent = swpCount;
+
+  // ASM viewer
+  renderAsmViewer(ev);
+
+  // Register simulation
+  updateRegisters(ev, frame, idx);
+
+  // Stack trace
+  updateStackTrace(ev, idx);
+
+  // Complexity graph (every 5 frames for perf)
+  if(idx % 5 === 0 || ev.type==='done'){
+    pushCplxData(cmpCount, undefined, idx, frames.length);
+  }
+}
+
+// ─── Playback ─────────────────────────────────────────────────
+function stopPlay(){
+  playing = false; clearInterval(playTimer);
+  if(cmpPlayTimer) clearInterval(cmpPlayTimer);
+  btnPlay.innerHTML = '<span class="msym fill text-[22px]">play_arrow</span>';
+}
+function startPlay(){
+  if(compareMode){
+    startComparePlay(true);
+    return;
+  }
+  if(!frames.length) return;
+  if(frameIdx >= frames.length-1) frameIdx = 0;
+  playing = true;
+  btnPlay.innerHTML = '<span class="msym fill text-[22px]">pause</span>';
+  playTimer = setInterval(()=>{
+    if(frameIdx < frames.length-1){ frameIdx++; renderFrame(frameIdx); }
+    else stopPlay();
+  }, speedMs);
+}
+
+// ─── Compare mode playback ────────────────────────────────────
+let cmpPlayTimer = null;
+let cmpFrameIdxA = 0, cmpFrameIdxB = 0;
+let cmpFramesA = [], cmpFramesB = [], cmpEventsA = [], cmpEventsB = [];
+let cmpDoneA = false, cmpDoneB = false;
+let trackCmpA = 0, trackCmpB = 0;
+const bwA = $('bar-wrap-a'), bwB = $('bar-wrap-b');
+
+function startComparePlay(resume = false){
+  if(cmpPlayTimer) clearInterval(cmpPlayTimer);
+  if(!resume || (cmpDoneA && cmpDoneB)){
+    cmpFrameIdxA = 0; cmpFrameIdxB = 0;
+    cmpDoneA = false; cmpDoneB = false;
+    trackCmpA = 0; trackCmpB = 0;
+    $('winner-a').classList.add('hidden');
+    $('winner-b').classList.add('hidden');
+  }
+
+  playing = true;
+  btnPlay.innerHTML = '<span class="msym fill text-[22px]">pause</span>';
+  cmpPlayTimer = setInterval(()=>{
+    if(!cmpDoneA){
+      if(cmpFrameIdxA < cmpFramesA.length-1){
+        cmpFrameIdxA++;
+        if(cmpEventsA[cmpFrameIdxA] && cmpEventsA[cmpFrameIdxA].type==='compare') trackCmpA++;
+        renderBars(bwA, cmpFramesA[cmpFrameIdxA], cmpEventsA[cmpFrameIdxA], new Set());
+      } else if(!cmpDoneA){
+        cmpDoneA = true;
+        renderBars(bwA, cmpFramesA[cmpFramesA.length-1], {type:'done',indices:[]}, new Set());
+        if(!cmpDoneB){ const w=$('winner-a'); w.textContent='🏆 WINS'; w.classList.remove('hidden'); }
+      }
+    }
+    if(!cmpDoneB){
+      if(cmpFrameIdxB < cmpFramesB.length-1){
+        cmpFrameIdxB++;
+        if(cmpEventsB[cmpFrameIdxB] && cmpEventsB[cmpFrameIdxB].type==='compare') trackCmpB++;
+        renderBars(bwB, cmpFramesB[cmpFrameIdxB], cmpEventsB[cmpFrameIdxB], new Set());
+      } else if(!cmpDoneB){
+        cmpDoneB = true;
+        renderBars(bwB, cmpFramesB[cmpFramesB.length-1], {type:'done',indices:[]}, new Set());
+        if(!cmpDoneA){ const w=$('winner-b'); w.textContent='🏆 WINS'; w.classList.remove('hidden'); }
+      }
+    }
+    renderAsmDualViewer(cmpEventsA[cmpFrameIdxA], cmpEventsB[cmpFrameIdxB]);
+    
+    // Push complexity graph
+    if((cmpFrameIdxA % 5 === 0 || cmpFrameIdxB % 5 === 0) || (cmpDoneA && cmpDoneB)){
+      pushCplxData(trackCmpA, trackCmpB, Math.max(cmpFrameIdxA, cmpFrameIdxB), Math.max(cmpFramesA.length, cmpFramesB.length));
+    }
+
+    if(cmpDoneA && cmpDoneB) stopPlay();
+  }, Math.max(30, speedMs*0.7));
+}
+
+// ─── Load algorithm ───────────────────────────────────────────
+async function loadAlgorithm(){
+  stopPlay();
+  showLoading(true);
+  frames=[]; events2=[]; frameIdx=0;
+  cmpCount=0; swpCount=0;
+  cmpCtr.textContent='0'; swpCtr.textContent='0';
+  sortedSetCumulative = new Set();
+  initCplxGraph();
+
+  const arr = genArray();
+
+  // Always run JS to get detailed frames and events
+  const res = runJS(arr, curAlgo.name);
+  frames  = res.frames;
+  events2 = res.events;
+  updateStatsDisplay(res.stats);
+
+  // Try backend
+  let usedBackend = false;
+  if(backendUp){
+    try{
+      const resp = await fetch(`${API}/api/sort`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({algorithm:curAlgo.name, arrayData:arr, arraySize:arr.length}),
+        signal: AbortSignal.timeout(5000)
+      });
+      if(resp.ok){
+        const d = await resp.json();
+        if(d.success){
+          usedBackend = true;
+        }
+      }
+    }catch(e){ /* fallback */ }
+  }
+
+
+
+  showLoading(false);
+  if(frames.length) renderFrame(0);
+  renderAsmViewer(null);
+
+  // If compare mode, also load second algorithm
+  if(compareMode) setupCompareMode(arr);
+}
+
+function updateStatsDisplay(s){
+  sComps.textContent  = s.comparisons ?? '—';
+  sSwaps.textContent  = s.swaps ?? '—';
+  sPasses.textContent = s.passes ?? s.totalPasses ?? '—';
+  sFrames.textContent = s.totalFrames ?? frames.length;
+  mComps.textContent  = s.comparisons ?? '—';
+  mSwaps.textContent  = s.swaps ?? '—';
+}
+
+
+
+function setupCompareMode(arr){
+  const algoA = ALGOS.find(a=>a.id===$('sel-algo-a').value) || curAlgo;
+  const algoB = ALGOS.find(a=>a.id===$('sel-algo-b').value) || ALGOS[(ALGOS.findIndex(a=>a.id===curAlgo.id)+1)%ALGOS.length];
+  
+  $('cmp-lbl-a').textContent = algoA.name;
+  $('cmp-lbl-b').textContent = algoB.name;
+  $('asm-lbl-a').textContent = algoA.name + ' ASM';
+  $('asm-lbl-b').textContent = algoB.name + ' ASM';
+
+  const resA = runJS([...arr], algoA.name);
+  const resB = runJS([...arr], algoB.name);
+  cmpFramesA = resA.frames; cmpEventsA = resA.events;
+  cmpFramesB = resB.frames; cmpEventsB = resB.events;
+
+  renderBars(bwA, cmpFramesA[0], cmpEventsA[0], new Set());
+  renderBars(bwB, cmpFramesB[0], cmpEventsB[0], new Set());
+  renderAsmDualViewer(cmpEventsA[0], cmpEventsB[0]);
+
+  // Activate complexity tab and setup legend
+  document.querySelector('[data-panel="cplx"]').click();
+  $('legend-b').style.display = 'flex';
+  $('cplx-legend').children[0].children[1].textContent = algoA.name;
+  $('legend-b').children[1].textContent = algoB.name;
+
+  setTimeout(startComparePlay, 500);
+}
+
+function showLoading(v){ loading.style.display = v ? 'flex' : 'none'; }
+
+// ─── Backend check ────────────────────────────────────────────
+async function checkBackend(){
+  try{
+    const r = await fetch(`${API}/health`, {signal: AbortSignal.timeout(2000)});
+    if(r.ok){
+      backendUp = true;
+    } else throw 0;
+  } catch {
+    backendUp = false;
+  }
+}
+
+// ─── Switch algorithm ─────────────────────────────────────────
+function switchAlgo(a){
+  if(a === curAlgo) return;
+  curAlgo = a;
+  // Tab styles
+  document.querySelectorAll('.algo-tab').forEach(t=>{
+    t.classList.toggle('active', t.dataset.id===a.id);
+  });
+  // UI updates
+  $('page-title').textContent  = a.name;
+  $('badge-time').textContent  = a.time;
+  $('badge-space').textContent = a.space;
+  $('s-algo-name').textContent = a.name;
+  $('s-algo-desc').textContent = document.getElementById(`tab-${a.id}`)?.dataset.comment || '';
+  $('s-time').textContent  = a.time;
+  $('s-space').textContent = a.space;
+  loadAlgorithm();
+}
+
+// ─── Event listeners ──────────────────────────────────────────
+// Algo tabs
+document.querySelectorAll('.algo-tab').forEach(btn=>{
+  btn.addEventListener('click', ()=> switchAlgo(ALGOS.find(a=>a.id===btn.dataset.id)));
+});
+
+// Playback
+btnPlay.addEventListener('click', ()=> playing ? stopPlay() : startPlay());
+$('btn-rew').addEventListener('click', ()=>{ 
+  stopPlay(); 
+  if(compareMode){
+    cmpFrameIdxA=0; cmpFrameIdxB=0; cmpDoneA=false; cmpDoneB=false; trackCmpA=0; trackCmpB=0;
+    $('winner-a').classList.add('hidden'); $('winner-b').classList.add('hidden');
+    renderBars(bwA, cmpFramesA[0], cmpEventsA[0], new Set());
+    renderBars(bwB, cmpFramesB[0], cmpEventsB[0], new Set());
+    renderAsmDualViewer(cmpEventsA[0], cmpEventsB[0]);
+    initCplxGraph();
+  } else {
+    frameIdx=0; sortedSetCumulative=new Set(); if(frames.length)renderFrame(0); 
+  }
+});
+$('btn-back').addEventListener('click', ()=>{ 
+  stopPlay(); 
+  if(compareMode){
+    if(cmpFrameIdxA>0) cmpFrameIdxA--; if(cmpFrameIdxB>0) cmpFrameIdxB--;
+    cmpDoneA=false; cmpDoneB=false; $('winner-a').classList.add('hidden'); $('winner-b').classList.add('hidden');
+    renderBars(bwA, cmpFramesA[cmpFrameIdxA], cmpEventsA[cmpFrameIdxA], new Set());
+    renderBars(bwB, cmpFramesB[cmpFrameIdxB], cmpEventsB[cmpFrameIdxB], new Set());
+    renderAsmDualViewer(cmpEventsA[cmpFrameIdxA], cmpEventsB[cmpFrameIdxB]);
+  } else {
+    if(frameIdx>0){frameIdx--;renderFrame(frameIdx);} 
+  }
+});
+$('btn-step').addEventListener('click', ()=>{ 
+  stopPlay(); 
+  if(compareMode){
+    if(!cmpDoneA){ if(cmpFrameIdxA<cmpFramesA.length-1) cmpFrameIdxA++; else {cmpDoneA=true; if(!cmpDoneB)$('winner-a').classList.remove('hidden');} }
+    if(!cmpDoneB){ if(cmpFrameIdxB<cmpFramesB.length-1) cmpFrameIdxB++; else {cmpDoneB=true; if(!cmpDoneA)$('winner-b').classList.remove('hidden');} }
+    renderBars(bwA, cmpFramesA[cmpFrameIdxA], cmpDoneA?{type:'done',indices:[]}:cmpEventsA[cmpFrameIdxA], new Set());
+    renderBars(bwB, cmpFramesB[cmpFrameIdxB], cmpDoneB?{type:'done',indices:[]}:cmpEventsB[cmpFrameIdxB], new Set());
+    renderAsmDualViewer(cmpEventsA[cmpFrameIdxA], cmpEventsB[cmpFrameIdxB]);
+  } else {
+    if(frameIdx<frames.length-1){frameIdx++;renderFrame(frameIdx);} 
+  }
+});
+$('btn-end').addEventListener('click', ()=>{ 
+  stopPlay(); 
+  if(compareMode){
+    cmpFrameIdxA=Math.max(0, cmpFramesA.length-1); cmpFrameIdxB=Math.max(0, cmpFramesB.length-1); cmpDoneA=true; cmpDoneB=true;
+    renderBars(bwA, cmpFramesA[cmpFrameIdxA], {type:'done',indices:[]}, new Set());
+    renderBars(bwB, cmpFramesB[cmpFrameIdxB], {type:'done',indices:[]}, new Set());
+    renderAsmDualViewer(cmpEventsA[cmpFrameIdxA], cmpEventsB[cmpFrameIdxB]);
+  } else {
+    if(frames.length){frameIdx=frames.length-1;renderFrame(frameIdx);}
+  }
+});
+
+// Sound
+btnSound.addEventListener('click', ()=>{
+  soundOn = !soundOn;
+  btnSound.textContent = soundOn ? 'volume_up' : 'volume_off';
+  btnSound.className = `msym text-[20px] ${soundOn?'on':'off'} hover:scale-110 active:scale-95 transition-all`;
+  if(soundOn) ensureAudio();
+});
+
+// Speed
+$('speed-slider').addEventListener('input', e=>{
+  const v = parseInt(e.target.value);
+  $('speed-lbl').textContent = v;
+  speedMs = Math.max(20, 1050 - v*10);
+  if(playing){ stopPlay(); startPlay(); }
+});
+
+// Array size
+$('size-slider').addEventListener('input', e=>{
+  arraySize = parseInt(e.target.value);
+  $('s-size-val').textContent = arraySize;
+});
+$('size-slider').addEventListener('change', ()=> loadAlgorithm());
+
+// Input mode
+document.querySelectorAll('.imode-btn').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    inputMode = b.dataset.mode;
+    document.querySelectorAll('.imode-btn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    
+    if(inputMode === 'custom'){
+      $('custom-input-wrap').style.display = 'block';
+      $('size-slider-wrap').style.display = 'none';
+      if($('custom-array-input').value.trim() !== '') loadAlgorithm();
+    } else {
+      $('custom-input-wrap').style.display = 'none';
+      $('size-slider-wrap').style.display = 'block';
+      loadAlgorithm();
+    }
+  });
+});
+
+$('btn-apply-custom').addEventListener('click', ()=> loadAlgorithm());
+
+// Generate new array
+$('btn-gen').addEventListener('click', ()=>{
+  if(inputMode === 'custom' && $('custom-array-input').value.trim() === '') {
+    $('custom-array-input').value = Array.from({length:arraySize}, ()=>Math.floor(Math.random()*90)+10).join(', ');
+  }
+  loadAlgorithm();
+});
+
+// Compare toggle
+$('compare-toggle').addEventListener('click', ()=>{
+  compareMode = !compareMode;
+  $('single-wrap').style.display = compareMode ? 'none' : 'block';
+  $('algo-tabs').classList.toggle('hidden', compareMode);
+  $('compare-selectors').classList.toggle('hidden', !compareMode);
+  if(compareMode) $('compare-selectors').style.display = 'flex';
+  
+  const cw = $('compare-wrap');
+  const aw = $('compare-asm-wrap');
+  if(compareMode){ 
+    cw.style.display='flex'; 
+    aw.style.display='flex';
+    $('compare-toggle').style.color='var(--p)'; 
+  } else { 
+    cw.style.display='none'; 
+    aw.style.display='none';
+    $('legend-b').style.display='none';
+    $('cplx-legend').children[0].children[1].textContent = 'Actual';
+    $('compare-toggle').style.color=''; 
+    if(cmpPlayTimer)clearInterval(cmpPlayTimer); 
+    document.querySelector('[data-panel="asm"]').click();
+  }
+  loadAlgorithm();
+});
+
+// Compare Dropdown change listener
+['sel-algo-a', 'sel-algo-b'].forEach(id => {
+  $(id).addEventListener('change', () => {
+    if(compareMode) loadAlgorithm();
+  });
+});
+
+// Panel tabs
+document.querySelectorAll('.ptab').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.ptab').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const p = btn.dataset.panel;
+    $('panel-asm').classList.toggle('hidden', p!=='asm');
+    $('panel-stack').classList.toggle('hidden', p!=='stack');
+    $('panel-cplx').classList.toggle('hidden', p!=='cplx');
+    if(p==='cplx'){ $('panel-cplx').style.display = 'flex'; drawCplxGraph(); }
+    else $('panel-cplx').style.display = 'none';
+  });
+});
+
+// Export logs
+$('btn-export').addEventListener('click', ()=>{
+  const lines = [`Algorithm: ${curAlgo.name}`, `Array Size: ${arraySize}`, `Input Mode: ${inputMode}`,
+    `Comparisons: ${cmpCount}`, `Swaps: ${swpCount}`, `Total Frames: ${frames.length}`, '',
+    'Frame log:', ...events2.slice(0,200).map((e,i)=>`[${i+1}] ${e.type} idx=[${e.indices||[]}] pass=${e.passNumber||0}`)
+  ].join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([lines],{type:'text/plain'}));
+  a.download = `${curAlgo.id}-sort-log.txt`; a.click();
+});
+
+// Keyboard
+document.addEventListener('keydown', e=>{
+  if(e.target.tagName==='INPUT') return;
+  if(e.code==='Space'){e.preventDefault(); playing?stopPlay():startPlay();}
+  if(e.code==='ArrowRight'&&!playing&&frameIdx<frames.length-1){frameIdx++;renderFrame(frameIdx);}
+  if(e.code==='ArrowLeft'&&!playing&&frameIdx>0){frameIdx--;renderFrame(frameIdx);}
+  if(e.code==='Home'){stopPlay();frameIdx=0;sortedSetCumulative=new Set();if(frames.length)renderFrame(0);}
+  if(e.code==='End'){stopPlay();if(frames.length){frameIdx=frames.length-1;renderFrame(frameIdx);}}
+  if(e.code==='KeyS'){$('btn-sound').click();}
+});
+
+// Resize
+let resizeT;
+window.addEventListener('resize', ()=>{
+  clearTimeout(resizeT);
+  resizeT = setTimeout(()=>{ if(frames.length) renderFrame(frameIdx); drawCplxGraph(); }, 150);
+});
+
+// ─── Init ─────────────────────────────────────────────────────
+async function init(){
+  showLoading(true);
+  await checkBackend();
+  loadAsmSource();
+  await loadAlgorithm();
+}
+init();
+</script>
+</body>
+</html>

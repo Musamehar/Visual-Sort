@@ -118,7 +118,7 @@
 <span class="font-headline-lg text-headline-lg-mobile md:text-headline-lg font-bold text-primary-container drop-shadow-[0_0_8px_rgba(255,109,31,0.3)] tracking-tight">VisualSort</span>
 </div>
 <nav class="hidden md:flex gap-8 items-center">
-<a class="font-label-caps text-label-caps text-text-secondary hover:text-text-primary transition-all duration-300" href="bubble.html">Algorithms</a>
+<a class="font-label-caps text-label-caps text-text-secondary hover:text-text-primary transition-all duration-300" href="visualizer.html">Algorithms</a>
 <a class="font-label-caps text-label-caps text-text-secondary hover:text-text-primary transition-all duration-300" href="performance benchmark.html">Benchmarks</a>
 <a class="font-label-caps text-label-caps text-text-secondary hover:text-text-primary transition-all duration-300" href="settings.html">Settings</a>
 <a class="font-label-caps text-label-caps text-text-secondary hover:text-text-primary transition-all duration-300 flex items-center gap-2" href="#">
@@ -126,7 +126,7 @@ GitHub <span class="material-symbols-outlined" style="font-size: 16px;">open_in_
 </a>
 </nav>
 <div class="flex items-center">
-<button onclick="window.location.href='bubble.html'" class="bg-primary-container text-black font-label-caps text-label-caps px-6 py-2 rounded transition-all duration-300 btn-glow hidden md:block">Start Visualizing</button>
+<button onclick="window.location.href='visualizer.html'" class="bg-primary-container text-black font-label-caps text-label-caps px-6 py-2 rounded transition-all duration-300 btn-glow hidden md:block">Start Visualizing</button>
 <button class="md:hidden text-text-primary p-2">
 <span class="material-symbols-outlined">menu</span>
 </button>
@@ -143,17 +143,17 @@ GitHub <span class="material-symbols-outlined" style="font-size: 16px;">open_in_
 <section class="w-full max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-24 md:py-32 flex flex-col items-center text-center z-10 relative">
 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-surface-stroke bg-surface-dim/50 mb-8 backdrop-blur-sm">
 <span class="w-2 h-2 rounded-full bg-primary-container animate-pulse shadow-[0_0_8px_rgba(255,109,31,0.8)]"></span>
-<span class="font-code-sm text-code-sm text-text-secondary">v2.0 Assembly Engine Live</span>
+<span class="font-code-sm text-code-sm text-text-secondary">Assembly Visualizer Live</span>
 </div>
 <h1 class="font-headline-xl text-headline-lg-mobile md:text-headline-xl text-text-primary max-w-4xl mb-6 tracking-tight leading-tight">
                 See Sorting in Real-Time.<br/>
 <span class="text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary">Powered by Assembly.</span>
 </h1>
 <p class="font-body-md text-body-md text-text-secondary max-w-2xl mb-12">
-                Watch classical sorting algorithms execute step-by-step with interactive playback controls, driven by a blazing-fast low-level backend. Terminal grade performance for the modern web.
+                Watch classical sorting algorithms execute step-by-step with interactive playback controls, driven by an x86 MASM executable backend.
             </p>
 <div class="flex flex-col sm:flex-row gap-4">
-<button onclick="window.location.href='bubble.html'" class="bg-primary-container text-black font-label-caps text-label-caps px-8 py-4 rounded transition-all duration-300 btn-glow flex items-center justify-center gap-2 hover:scale-105">
+<button onclick="window.location.href='visualizer.html'" class="bg-primary-container text-black font-label-caps text-label-caps px-8 py-4 rounded transition-all duration-300 btn-glow flex items-center justify-center gap-2 hover:scale-105">
 <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
                     Start Visualizing
                 </button>
@@ -206,16 +206,16 @@ GitHub <span class="material-symbols-outlined" style="font-size: 16px;">open_in_
 <div class="w-12 h-12 rounded bg-surface-container flex items-center justify-center mb-6 group-hover:bg-primary-container/10 transition-colors border border-surface-stroke group-hover:border-primary-container/30">
 <span class="material-symbols-outlined text-primary-container">memory</span>
 </div>
-<h3 class="font-headline-lg text-headline-lg-mobile text-text-primary mb-3">Assembly Engine</h3>
+<h3 class="font-headline-lg text-headline-lg-mobile text-text-primary mb-3">Assembly Visualizer</h3>
 <p class="text-text-secondary font-body-md text-body-md">
-                            Powered by a custom WebAssembly backend written in Rust. Experience zero-lag execution even with large arrays of thousands of elements.
+                            Powered by a custom x86 MASM backend. Experience step-by-step execution highlighting the exact assembly instructions.
                         </p>
 </div>
 <div class="mt-8 pt-4 border-t border-surface-stroke">
 <div class="font-code-sm text-code-sm text-text-secondary bg-surface-dim p-3 rounded border border-surface-stroke overflow-hidden">
-<span class="text-primary-container">fn</span> sort(arr: &amp;mut [<span class="text-[#89ceff]">i32</span>]) {<br/>
-                              <span class="text-text-secondary">// Blazing fast execution</span><br/>
-                            }
+<span class="text-primary-container">mov</span> eax, [esi]<br/>
+<span class="text-primary-container">cmp</span> eax, [edi]<br/>
+                            <span class="text-text-secondary">; Step-by-step execution</span>
                         </div>
 </div>
 </div>
@@ -226,7 +226,8 @@ GitHub <span class="material-symbols-outlined" style="font-size: 16px;">open_in_
 <footer class="w-full bg-background dark:bg-background border-t border-primary-container/20">
 <div class="flex flex-col md:flex-row justify-between items-center px-margin-mobile md:px-margin-desktop py-12 max-w-container-max mx-auto space-y-4 md:space-y-0">
 <div class="font-label-caps text-label-caps font-bold text-text-primary">
-                © 2024 VisualSort. Terminal Grade Performance.
+                © 2024 VisualSort.
+
             </div>
 <div class="flex gap-6">
 <a class="font-label-caps text-label-caps text-text-secondary hover:text-text-primary transition-colors duration-200" href="#">Documentation</a>
